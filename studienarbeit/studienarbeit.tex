@@ -1,0 +1,245 @@
+\documentclass[a4paper,
+DIV=13,
+12pt,
+BCOR=10mm,
+department=FakIM,
+%lucida,
+%KeepRoman,
+oneside,
+parskip=half,
+automark,
+listof=totocnumbered,
+bibliography=totocnumbered,
+acronym=totocnumbered
+%headsepline,
+] {OTHRartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, margin=0cm, left=3.5cm, top=2.5cm, right=2.5cm, bottom=3.0cm]{geometry}
+\usepackage[ngerman]{babel}
+\usepackage[printonlyused]{acronym}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+
+\newcommand{\comment}[1]{}
+\date{\today}
+\title{Vulnerabilty eingebetteter Systeme}
+\author{Gruber Daniel}
+\documenttype{Studienarbeit}
+\department{Informatik}
+\startingdate{14.\,März 2022}
+\closingdate{23.\,Juli 2022}
+
+\firstadvisor{Jonas Schmidt}
+%\secondadvisor{Herr Altmann}
+%\externaladvisor{Dr. Klara Endlos}
+
+%\externallogo[height=1.5cm]{firmenlogo}
+
+
+%\ohead*{\date}
+%\chead{}
+%\ihead{\date}
+%%\ohead{\date}
+%\ofoot{}
+%\cfoot{}
+%\ifoot{Daniel Gruber}
+%\ofoot*{\pagemark}% Seitenzahl in die Mitte des Fußes, auch auf plain Seiten
+
+% Zeilenabstand auf 1.5
+%\usepackage[onehalfspacing]{setspace}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+%Hier schonmal Abkürzungsberzeichnis vorbereitet. Im Text kann mit \ac{Abk} auf die Abkürzung referenziert werden. Es wird automatisch beim ersten referenzieren die volle Schreibweise genommen, ab dann immer die abkürzung
+\section*{Abkürzungsverzeichnis}
+\label{abkuerzungsverzeichnis}
+\begin{acronym}[AUTOSAR]
+\acro{ecu}[ECU]{Electronic Control Unit}
+\end{acronym}
+
+
+% ============================================================================== Kapitel 1: Einleitung ===============================================================================
+\section{Einleitung}
+Die Vernetzung im Fahrzeug sowohl mit dem Internet als auch intern nimmt immer weiter zu. Die Anzahl der \acs{ecu} ist von einer kleinen unabhängigen Architektur
+zu eine funktionsspezifischen und weiterhin zu einer zentralisierten Architektur gewachsen mit bis zu circa 150ECUS einem Premium Segement Fahrzeug.
+Mit dem starken Anstieg von \acs{ecu} im Auto nimmt einerseits die Funktionialität für den Nutzer zu, jedoch bilden sich durch mehr Software und Funktionialität
+mehr Angriffsmöglichkeiten auf das System \"Auto\" an sich. Hier ist es neben sicherem Code schreiben (Software) auch ein sehr wichtiger Aspekt
+die Hardware zu kennen und insbesondere deren Schwachstellen.
+In dieser Arbeit wird auf die STM32 Architektur eingegangen und anhand dieser drei typische Schwachstellen erklärt. Zudem wird zu jeder dieser
+Schwachstellen Präventionsmaßnahmen beschrieben.
+Abschließend wird die Skalierbarkeit einer dieser Schwachstellen in Form eines xxxxxx Angnriffes auf ein Fahrzeug aufgegriffen und darüber
+eine Diskussion dargestellt, welche Maßnahmen dagegen getroffen werden können und welche Vorteile/Nachteile diese Maßnahmen haben.
+
+
+% ============================================================================== Kapitel 2: Vorstellung wichtiger Rahmenbedinungen ===============================================================================
+\section{Vorstellung wichtiger Rahmenbedingungen}
+% Architekturmerkmale, Adressierungsmoid, Ausführungsmodelle, Betriebssstem
+
+% Architektur des STM32F103C8T6 ARM®Cortex®-M3 32-bit RISC core, 72MHz, 64KB (64Kx8) Flash
+% ARM v5 32 little endian
+% Adapted Harvard Architektur: getrennte Busse für Befehle und Daten, aber beides liegt im Flash
+
+%STM32F103C8T6	32Bit MCU, ARM CORTEX M3, Flash 64KB, RAM 20KB, IO 37, A/D 10x12b, 72MHz, LQFP48
+
+%Die Cortex-M3-Architektur kann somit als Nachfolger für den ARM7 betrachtet werden und stellt mehr Rechenleistung als ein ARM7 bei geringerer Komplexität des Programmiermodells sowie geringerer Chipfläche zur Verfügung. Andere Untergruppen, wie z. B. der M1, sind z. B. für die Implementierung auf einem FPGA verfügbar.
+
+Die STM32 Mikrocontroller-Familie werden vom europäischen Halbleiterhersteller STMicroelectronics N.V. produziert, welche als eine der ersten Hersteller
+die CORTEX M3 Lizenz von der Firma ARM erworben haben.
+Der STM32 Controller zeichnet sich nämlich durch eine 32-Bit ARM Cortex-M0/M3/M4 CPU aus, die speziell für Mikrocontroller neu entwickelt wurde.
+Die Cortex M3 wird inoffziell als leistungsfähigerer Nachfolger der ARM7 TDMI Controller betrachtet.
+
+Diese ARchitektur verwendet ausschließlich den THumb2 Befehlssatz.
+Hauptbestandteil des Cortex M3 Prozessor, wie konkret beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
+Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
+Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
+somit der Adressraum dementsprechend linear programmiert werden kann.
+Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist sowie
+kein getrennter physikalischer Speicher für Daten und Befehle verwendet wird.
+Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
+verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
+Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
+% noch erwähnen, dass ARM CORTEX M§ Memory Protection besitzt
+
+
+
+% ADRESSIERUNGSMODI??? Speicherzugriff
+
+Der Speicherzugriff funktioniert wie auf folgender Abilldung dargestellt:
+
+\begin{figure}[ht!]
+    \begin{center}
+      \includegraphics[scale=0.28]{figures/speicherzugriff_aktiv.png}
+      \caption{Speicherzugriff}
+      \label{Abbildung 1: Speicherzugriff}
+    \end{center}
+  \end{figure}
+
+Im Speicherzugriffsregister (Memory address register MAR) wird die Adresse angelegt, auf die im Speicher zugegriffen werden soll.
+Anschließen wird im Adress Decode die Adresse entschlüsselt/übersetzt und die jewelige Addresslinie wird aktiv geschalten.
+Daraufhin wird die aktiv geschaltene Linie, mit 8 indiviuellen Speicherzellen (jeweils 1 Bit), also insgesamt 1 Byte in
+das Speicherregistier geladen (Memory data register MDR).
+
+% Little Endian, wichtig für Buffer Overflow beim Auslesen
+Des Weiteren ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
+Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeichert:
+
+\begin{figure}[ht!]
+    \begin{center}
+      \includegraphics[scale=0.28]{figures/speicher_littleEndian.png}
+      \caption{Little Endian}
+      \label{Abbildung 1: Little Endian}
+    \end{center}
+\end{figure}
+
+Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige ROlle, da beim Auslesen des
+Speicher dies zu berücksichtigen ist.
+
+\comment{
+intern Harvard-Architektur, aber aus Programmierersicht von-Neumann-Architektur
+linearer Adressraum für Programme und Daten
+Sprungvorhersage
+Multiplikation in einem Takt
+Thumb2-Befehlsatz, der gegenüber dem Thumb-Befehlssatz 30% kompakteren Code erzeugt
+optimiert für Compilerprogrammierung
+einfaches Programmiermodell, keine Kenntnisse über den Prozessorkern notwendig
+hardwarebasierter Interrupt
+beim Interrupt werden die Register automatisch gesichert
+Memory-Protection
+Timer
+umfangreiche Peripherie (typabhängig)
+Debug und Tracemöglichkeiten in den Prozessor integriert
+geringer Stromverbrauch
+}
+
+%Mit einer 32-Bit ARM Cortex-M0/M3/M4 CPU ist diese Architektur
+%speziell für Mikrocontroller geegeinet, wobei es unzählige Varianten davon gibt.
+% Bisher werden diese in elf STM32 Famililen gegliedert: % 11 familien irgendwie zusammenfassen
+
+
+
+% ============================================================================== Kapitel 3: Schwachstellen ======================================================================================
+\section{Schwachstellen}
+%%%%% MEMCMP TIMING ATTACKE
+\subsection{memcmp Timing Attacke für Bruteforcing}
+\subsubsection{Beschreibung}
+Die memcmp Timing Attacke ist ein typischer Seitenkanal-Angriff. Diese Art von Angriffen basieren auf Informationen, die von der konkreten Implementierung eines Systems abhängen.
+Bei der memcpm Timing Attacke basiert dies auf dem Wissen über die Softwareimplementierung eines Vergleichs von Speicherbereichen.
+%welche konkret in diesem Fall auf die Softwareimplementierung eines Vergleichs von Speicherbereichen.
+Denn im Fall, dass eine Speichervegleichsfunktion so implementiert ist, dass beim ersten nicht übereinstimmende vergleichenenen Zeichen von der Funktion 'false' zurückgegeben wird,
+benötigt der Vergleich unterschiedlich lange, je nach Anzahl richtiger Buchstaben einer Zeichenkette.
+Hier wird konkret der Aspekt der Zeit ausgenutzt, denn die Dauer der Funktion hängt von den zu vergleichenden Speicherbereichen ab.
+Je länger die Funktion benötigt, desto mehr Buchstaben waren beim entsprechenden Vergleich richtig.
+Diese Information der Dauer einer Funktion je nach Vergleich kann man nun ausnutzen, um Bruteforcing bei Passworteingaben deutlich zu optimieren.
+Bei 'normalen' Bruteforcing müssen alle Kombinationen durchrpobiert werden, d.h.
+bei einem Passwort der Länge 6 müssen bis zu $10*10*10*10*10*10 = 10^6$ Möglichkeiten durchprobiert werden.
+Dahingegen kann bei einer memcmp Timing Attacke Stelle für Stelle durchprobiert werden, und die Auswahl, die am längsten benötigt hat,
+wird als 'richtig' übernommen, denn dann hat die Vegleichsfunktion für die jeweilige Stelle einen erfolgreichen Vergleich durchgeführt.
+Dies führt dazu, dass die nächste Stelle überprüft wird, was bedeutet, dass die Funktion dafür mehr Zeit braucht.
+Insgesamt führt die memcmp Timing Attacke also zu einer erheblichen Verbesserung, indem beim Fall der Passwortlänge von 6
+nur noch $ 10+10+10+10+10+10 = 60 $ Möglichkeiten durchprobiert werden müssen.
+
+\textit{Anmerkung} \mbox{} \\
+In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige CLock Cycles für den Vergleich benötigt werden.
+Dies bedeutet, dass der Delay über ein USB Kabel deutlich größer ist (im Millesekunden Breich) als die Dauer des Vergleichs.
+Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Logic Analyzers benötigt, um den Zeitunterschied
+für den Vergleich am Embedded System zu messen.
+
+
+%% WICHTIG: Memcmp Timing Attack:
+% Zeit Messen:
+% • Wichtig ist die Zeit zwischen dem Absenden des Passworts und dem Ankommen einer
+% Rückmeldung
+% • Normalerweise ist diese Zeit in den Nanosekunden da nur ein paar Clock Cycles
+% benötigt werden, somit ist der variable Delay über z.B. USB größer als die
+% Berechnungsdauer, somit werden Oscilloscope oder Logic Analyzers benötigt um den
+% Zeitunterschied am Embedded System zu messen
+
+
+%Mit diesen Art von Angriff kann man diese charakteristische Eigenschaft der Funktion ausnutzen, um ein Bruteforcing in Abhängigkeit
+%der jeweils benötigten Zeit für einen Vergleich durchzuführen.
+\subsubsection{Beispiel}
+
+\subsubsection{Prävention/Schutzmaßnahmen}
+
+%%%%% FORMAT STRING VULNERABILITY
+\subsection{Format String Vulnerabilty}
+\subsubsection{Beschreibung}
+\subsubsection{Beispiel}
+\subsubsection{Prävention/Schutzmaßnahmen}
+
+%%%%% BUFFER OVERFLOW (ROP)
+\subsection{Buffer Overflow (ROP)}
+\subsubsection{Beschreibung}
+\subsubsection{Beispiel}
+\subsubsection{Prävention/Schutzmaßnahmen}
+
+
+% ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ======================================================================================
+\section{Besprechung der möglichen Skalierbarkeit}
+
+
+
+% ============================================================================== APPENDIX ===============================================================================
+\begin{appendix}
+\listoffigures
+
+\cleardoublepage
+\begin{thebibliography}{99}
+\bibitem{Nemo} Dr. Nemo: \textit{Submarines through the ages}, Atlantis, 1876.
+% DataSheeet von STM32F103C8: file:///C:/Users/danie/Downloads/stm32f103c8.pdf
+% McKinsey Studie ECU (für einleitung) https://www.mckinsey.com/~/media/mckinsey/industries/automotive%20and%20assembly/our%20insights/mapping%20the%20automotive%20software%20and%20electronics%20landscape%20through%202030/automotive-software-and-electronics-2030-final.pdf
+
+\end{thebibliography}
+
+\cleardoublepage
+\makedeclaration
+\end{appendix}
+
+\end{document}
