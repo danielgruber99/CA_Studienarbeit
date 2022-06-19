@@ -142,6 +142,10 @@ Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeiche
 Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige ROlle, da beim Auslesen des
 Speicher dies zu berücksichtigen ist.
 
+
+%% BUFFER OVERLOW: wichtig, dass LR register da ist, da wird stack pointer gesichert und geladen, deswegen 2 funktionen um quasi return adr. zu überschreiben,
+%
+
 \comment{
 intern Harvard-Architektur, aber aus Programmierersicht von-Neumann-Architektur
 linearer Adressraum für Programme und Daten
@@ -309,8 +313,9 @@ Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert.
 
 Des Weiteren ist ees möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
 ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
-
-
+Hierbei muss man erst den Shell start in Assembly suchen. Mit der Format String Vulnerabilty muss man darauffolgend mit \%x die return Adresse
+der jeweiligen print Funktion herausfinden. Nachfolgend kann die Schwachstelle ausnutzen, indem man im Input die Adresse der return Adresse von printf schreibt
+und daraufhin \%n ausnutzt um eben an diese Adresse mit der Addresse zum Ausführen der Shell überschreiben.
 %% SHELL ANGRIFFSPLAN, NOCHMAL MIT DAWUTZ DRÜBER REDEN; VERSTEHEN,.....
 
 
@@ -319,13 +324,31 @@ ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
 
 \subsubsection{Beispiel}
-Folgendes einfaches Beispiel zeigt die Verwundbarkeit von printf bei falscher Benutzung auf:
+Folgendes Beispiel konzentriert sich auf die beispielshafte Anwendung der Format String Vulnerabilty in Bezug auf das Auslesen von Speicher.
+%Konkret soll hier der RAM ausgelesen werden, in welchen sich das Passwort nach erstmaligen Vergleich geladen wurde.
+Der folgende Code zeigt ein Beispielprogramm, dass eine printf Implementierung mit oben beschriebener Schwachstelle aufweist.
 \begin{minted}[linenos]{c}
 int main(){
-  char* input = "Hello World!";
-  printf(input);
+  char* correct_password = "f0rm4tS7r!ng";
+  char* username;
+  int age;
+  // User Input
+  scanf("Hello, please first enter your age: ", &age);
+  scanf("Enter your username: ", username);
+  // For taking advantage of this vulnerability: 1. enter a number for which adress to read, 2. enter on the correct position %s to interpret the entered number in 1. as pointer
+  // Output
+  printf("Your age is: %d", age);
+  printf("Welcome ");
+  printf(username); // FORMAT STRING Vulnerability
 }
 \end{minted}
+Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschten Benutzernamen.
+Letztere Eingabe weist die entsprechende Format String Schwachstelle auf.
+Hierbei kann der Nutzer bzw. der Angreifer dies ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auslzusende Speicherzelle dient.
+In der zweiten Eingabe, der Benutzername eingabe, kann man nun mit enstprechend vielen \%d und dann einem \%s, welches sich genau an der Position des
+vorher gegebenen Alters eingibt. Beispielsweise kann die Eingabe dann wie folgt aussehen: \textit{\%d\%d\%s}.
+Das eingegebene Alter bzw. die Adresse der Speicherstelle, die ausgelesen werden soll, wird mit \%s als Pointer interpretiert und ausgegeben.
+Hiermit kann man beispielsweise nun den RAM, den Flash oder andere Speicherbereiche auslesen.
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schutzmaßnahme, nämlich
@@ -336,6 +359,8 @@ derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow (ROP)}
 \subsubsection{Beschreibung}
+
+
 \subsubsection{Beispiel}
 \subsubsection{Prävention/Schutzmaßnahmen}
 
