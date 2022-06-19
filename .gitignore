@@ -1,0 +1,5 @@
+!studienarbeit/
+studienarbeit/**
+!*.pdf
+!*.tex
+.vscode

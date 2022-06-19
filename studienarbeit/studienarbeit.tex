@@ -21,16 +21,17 @@ acronym=totocnumbered
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{amsmath}
-
+\usepackage{minted}
 
 \newcommand{\comment}[1]{}
 \date{\today}
 \title{Vulnerabilty eingebetteter Systeme}
 \author{Gruber Daniel}
+\studentid{3214109}
 \documenttype{Studienarbeit}
 \department{Informatik}
 \startingdate{14.\,März 2022}
-\closingdate{23.\,Juli 2022}
+\closingdate{20.\,Juli 2022}
 
 \firstadvisor{Jonas Schmidt}
 %\secondadvisor{Herr Altmann}
@@ -49,7 +50,7 @@ acronym=totocnumbered
 %\ofoot*{\pagemark}% Seitenzahl in die Mitte des Fußes, auch auf plain Seiten
 
 % Zeilenabstand auf 1.5
-%\usepackage[onehalfspacing]{setspace}
+\usepackage[onehalfspacing]{setspace}
 
 \begin{document}
 \maketitle
@@ -63,7 +64,7 @@ acronym=totocnumbered
 \begin{acronym}[AUTOSAR]
 \acro{ecu}[ECU]{Electronic Control Unit}
 \end{acronym}
-
+\newpage
 
 % ============================================================================== Kapitel 1: Einleitung ===============================================================================
 \section{Einleitung}
@@ -105,7 +106,7 @@ kein getrennter physikalischer Speicher für Daten und Befehle verwendet wird.
 Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
 verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
 Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
-% noch erwähnen, dass ARM CORTEX M§ Memory Protection besitzt
+% noch erwähnen, dass ARM CORTEX M3 Memory Protection besitzt
 
 
 
@@ -178,12 +179,13 @@ Hier wird konkret der Aspekt der Zeit ausgenutzt, denn die Dauer der Funktion h�
 Je länger die Funktion benötigt, desto mehr Buchstaben waren beim entsprechenden Vergleich richtig.
 Diese Information der Dauer einer Funktion je nach Vergleich kann man nun ausnutzen, um Bruteforcing bei Passworteingaben deutlich zu optimieren.
 Bei 'normalen' Bruteforcing müssen alle Kombinationen durchrpobiert werden, d.h.
-bei einem Passwort der Länge 6 müssen bis zu $10*10*10*10*10*10 = 10^6$ Möglichkeiten durchprobiert werden.
-Dahingegen kann bei einer memcmp Timing Attacke Stelle für Stelle durchprobiert werden, und die Auswahl, die am längsten benötigt hat,
+bei einem Passwort der Länge 6 müssen bis zu $|A|*|A|*|A|*|A|*|A|*|A| = |A|^6$ Möglichkeiten durchprobiert werden.
+$|A|$ ist die Mächtigkeit der möglichen Eingabezeichen.
+Dahingegen kann bei einer memcmp Timing Attacke Stelle für Stelle durchprobiert werden, und die Auswahl für die jeweilige Stelle, die am längsten benötigt hat,
 wird als 'richtig' übernommen, denn dann hat die Vegleichsfunktion für die jeweilige Stelle einen erfolgreichen Vergleich durchgeführt.
 Dies führt dazu, dass die nächste Stelle überprüft wird, was bedeutet, dass die Funktion dafür mehr Zeit braucht.
 Insgesamt führt die memcmp Timing Attacke also zu einer erheblichen Verbesserung, indem beim Fall der Passwortlänge von 6
-nur noch $ 10+10+10+10+10+10 = 60 $ Möglichkeiten durchprobiert werden müssen.
+nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Möglichkeiten durchprobiert werden müssen.
 
 \textit{Anmerkung} \mbox{} \\
 In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige CLock Cycles für den Vergleich benötigt werden.
@@ -191,26 +193,100 @@ Dies bedeutet, dass der Delay über ein USB Kabel deutlich größer ist (im Mill
 Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Logic Analyzers benötigt, um den Zeitunterschied
 für den Vergleich am Embedded System zu messen.
 
-
-%% WICHTIG: Memcmp Timing Attack:
-% Zeit Messen:
-% • Wichtig ist die Zeit zwischen dem Absenden des Passworts und dem Ankommen einer
-% Rückmeldung
-% • Normalerweise ist diese Zeit in den Nanosekunden da nur ein paar Clock Cycles
-% benötigt werden, somit ist der variable Delay über z.B. USB größer als die
-% Berechnungsdauer, somit werden Oscilloscope oder Logic Analyzers benötigt um den
-% Zeitunterschied am Embedded System zu messen
-
-
-%Mit diesen Art von Angriff kann man diese charakteristische Eigenschaft der Funktion ausnutzen, um ein Bruteforcing in Abhängigkeit
-%der jeweils benötigten Zeit für einen Vergleich durchzuführen.
 \subsubsection{Beispiel}
+In diesem Abschnitt wird ein repräsentatives Beispiel für oben genannte Schwachstelle dargestellt.
+Der Einfachkeit halber wird ein PIN Vergleich der begrenzten Länge 4 durchgeführt, wobei das Alphabet 0-9 ist, d.h. eine Mächtigkeit von $|A| = 10$ besitzt.
+%Dies gilt ohne Beschränkung der Allgemeinheit und kann beliebig in der Länge sowie der Mächtigkeit des Alphabets verändert werden.
+Zudem wird die Annahme getroffen, dass der Pin Vergleich erst nach vollständiger Pineingabe erfolgt. Dabei
+wird folgender Code Ausschnitt für die Überprüfung des PINs verwendet.
+\begin{minted}[linenos]{c}
+bool pin_correct(char *input){
+  char *correct_pin = "1337";
+  for (int i = 0; i < 4; i++){
+    if (input[i] != correct_pin[i]){
+      return false;
+    }
+  }
+  return true;
+}
+\end{minted}
+
+Für reines Raten, d.h. Bruteforcing ohne weitere Kenntnisse, sind eine gesamte Anzahl von $ 10*10*10*10 = 10^4 $ Kombinationen möglich.
+Um die Anzahl der Kombinationen deutlich zu reduzieren kann man den Vorteil des Wissens über die obige Funktion nutzen und damit
+die memcmp Timing Attacke verwenden.
+Denn obiger Code Ausschnitt gibt beim ersten nicht korrekten Zeichen 'false' zurück, weshalb die die Ausführungsdauer der
+Funktion von der Anzahl der richtig eingegebenen Pin Stellen abhängt.
+Dafür geht man Stelle für Stelle durch und überprüft angefangen bei der ersten Stelle für jede mögliche Eingabe von 0-9, welche die längste Zeit benötigt.
+Denn wenn die Stelle richtig ist, war der Vergleich richtig und die Funktion wird die nächste Stelle überprüfen, was mit einer längeren Dauer für die Funktion
+einhergeht.
+Konkret für die erste Stelle werden also alle Möglichkeiten durchgetestet von \textit{0000, 1000, 2000 bis 9000}, wobei für jeder dieser Eingaben
+eine Zeitmessung durchgeführt wird.
+Folgende zwei Abbildungen stellen für die erste Eingabestelle dar, wie sich die Vergleichszeit im
+korrekten Fall ($t_correct$) zum Fehlerfall ($t_bad$) unterscheidet.
+Da der korrekte Pin 1337 ist, wird für die Eingabe 1000 die Vergleichszeit länger dauern, wie in $t_correct$ dargestellt.
+Für alle anderen Möglichkeiten wird die linke Abbildung mit $t_bad$ zutreffen.
+%Für $t_bad$ kann man als Beispieleingabe \textit{0000, 2000, 3000, ..., 9000} verwenden, während
+%der korrekte Fall $t_correct$ die Eingabe  \textit{1000} zutrifft.
+Diese Angriff wird für jede Möglichkeit der nächsten Stelle bis zur letzten Stelle druchgeführt ausgehend vor der korrekten Eingabe der jeweils vorherigen Stellen.
+Bei der letzten Stelle ist die Zeitmessung überflüssig, denn im korrekten Fall hat man das System entsperrt.
+Der Vorteil dieser Methode ist, dass die PIN Stellen sequentiell ausgehend vom Wissen über die Position richtig erraten werden.
+Damit erreicht man, dass die maximale Anzahl an Kombinatione maximal $10+10+10+10 = 4*10 = 40 $ beträgt.
+Das bedeutet, dass die Möglichkeiten bei der memcmp Timing Attack für Bruteforce gegenüber reinem Bruteforce nur noch $\frac{40}{1000} = \frac{4}{100} = 4\% $
+aller Möglichkeiten betragen.
+
+
+
+
+
 
 \subsubsection{Prävention/Schutzmaßnahmen}
+Für obige Funktion gibt es eine Vielzahl von Schutzmaßnahmen, die im Wesentlichen solche Angriffe deutlich erschweren, aber nicht 100\%ig verhindern.
+Bei der Annahme, dass das Passwort in Klartext überprüft wird und nicht als gehashter Wert, werden insgesamt 4 Schutzmaßnahmen vorgestellt.
+Die erste Schutzmaßnahme zielt auf eine korrelationslose bzw. konstante Zeit bei der Überprüfung ab. Dies wird erreicht, indem unabhängig
+von einer falschen Stelle immer alle Stellen überprüft werden und nachfolgend erst das Ergebnis des Vergleichs zurückgegeben wird.
+Hierbei wäre für oben dargestellten Code eine wesentliche Änderung nötig, nämlich die Verwendung ein boolschen Variable,
+die defaultmäßig true ist und bei einem fehlerhaften Vergleich auf false gesetzt wird. Dabei ist zu beachten, dass
+alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zurückgegeben wird.
+\begin{minted}[linenos]{c}
+  bool pin_correct(char *input){
+    char *correct_pin = "1337";
+    bool test = true;
+    for (int i = 0; i < 4; i++){
+      if (input[i] != correct_pin[i]){
+        test = false;
+      }
+    }
+    return test;
+  }
+\end{minted}
+
+Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
+randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
+
+% zufällige Startzugriffe
+
+
+% decoy operations
+
+
+
+% Korrelationslose/Konstante Zeiten überall (Siehe letzte Folien):
+% • Keine Messbaren Funktionsaufrufe
+% Zufällige Startzugriffe (Siehe letzte Folien):
+% • Angreifer kann schwerer Reihenfolge nachvollziehen
+% Timing Randomization:
+% • Bsp. sleep(random.randint(0,9))
+% • Schwer Messbare Informationen
+
+% Decoy Operations:
+% • Algorithmen führen zufällig Berechnungen durch und verwenden Ergebnis nicht
+% • Bsp. Memcmp vergleicht einige Werte mehrmals
+% • Verfälschen der Seitenkanalinformationen
 
 %%%%% FORMAT STRING VULNERABILITY
 \subsection{Format String Vulnerabilty}
 \subsubsection{Beschreibung}
+
 \subsubsection{Beispiel}
 \subsubsection{Prävention/Schutzmaßnahmen}
 
@@ -222,20 +298,23 @@ für den Vergleich am Embedded System zu messen.
 
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ======================================================================================
+\newpage
 \section{Besprechung der möglichen Skalierbarkeit}
 
 
 
 % ============================================================================== APPENDIX ===============================================================================
 \begin{appendix}
+\newpage
 \listoffigures
 
 \cleardoublepage
+\newpage
 \begin{thebibliography}{99}
 \bibitem{Nemo} Dr. Nemo: \textit{Submarines through the ages}, Atlantis, 1876.
 % DataSheeet von STM32F103C8: file:///C:/Users/danie/Downloads/stm32f103c8.pdf
 % McKinsey Studie ECU (für einleitung) https://www.mckinsey.com/~/media/mckinsey/industries/automotive%20and%20assembly/our%20insights/mapping%20the%20automotive%20software%20and%20electronics%20landscape%20through%202030/automotive-software-and-electronics-2030-final.pdf
-
+% Colin O'Flynn and Jasper van Woudenberg: The Hardware Hacking Handbook
 \end{thebibliography}
 
 \cleardoublepage
