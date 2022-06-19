@@ -286,9 +286,52 @@ randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von g
 %%%%% FORMAT STRING VULNERABILITY
 \subsection{Format String Vulnerabilty}
 \subsubsection{Beschreibung}
+Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
+Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz bringen.
+Diese Schwachstelle kann man beipsielsweise in printf, fprintf und weiteren print Funktionen ausnutzen.
+Das erste Argument ist der sogenannte Format String und die im Format String enthaltenen weiteren Parameter wie \%s, \%d, \%x und weitere werden durch nachfolgende
+Argumente ersetzt. Die nachfolgende Abbildung verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
+Paramtern \%s und \%d als Argumente ersetzt werden.
+% Parameter im Format String beginnen mit %
+\begin{figure}[ht!]
+  \begin{center}
+    \includegraphics[scale=0.28]{figures/format_string_vulnerability_format_string.png}
+    \caption{printf - Format String}
+    \label{Abbildung 1: printf - Format String}
+  \end{center}
+\end{figure}
+
+Falls die printf - Funktion unsicher programmiert ist, wie auf folgender Abbiludng zu sehen,
+kann der Nutzer/Angreifer als Eingabe mehrere \%x wie folgt eingeben: \%x\%x\%x\%x\%x
+Da die printf Aufruf ohne explizite Parameter aufgerufen wird, werden die Parameter von den Registern bzw. weiterführend vom Stack ausgelesen und als Hexadezimal zurückgegeben.
+Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
+Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert.
+
+Des Weiteren ist ees möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
+ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
+
+
+%% SHELL ANGRIFFSPLAN, NOCHMAL MIT DAWUTZ DRÜBER REDEN; VERSTEHEN,.....
+
+
+% Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
+% jedoch kann es sein dass dieser printf vulnerability noch in anderen aufgerufenen Funktione wie syslog oder irgnedwelchen libs enthalten ist,
+% deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
 
 \subsubsection{Beispiel}
+Folgendes einfaches Beispiel zeigt die Verwundbarkeit von printf bei falscher Benutzung auf:
+\begin{minted}[linenos]{c}
+int main(){
+  char* input = "Hello World!";
+  printf(input);
+}
+\end{minted}
+
 \subsubsection{Prävention/Schutzmaßnahmen}
+Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schutzmaßnahme, nämlich
+das sichere Programmieren, indem man die Paramter \%s, \%d, ... korrekt benutzt.
+Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
+derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow (ROP)}
