@@ -368,16 +368,32 @@ derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow (ROP)}
 \subsubsection{Beschreibung}
+% https://owasp.org/www-community/attacks/Buffer_overflow_attack
+% https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
+Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer, beispielsweise ein Array in der Programmiersprache C, versucht zu speichern, als
+dieser umfasst.
+In einem konkreten Angriff kann man diese Schwachstelle nutzen, um Assembly in den Stack zu schreiben, um mit diesen beispielsweise eine (admin) shell zu öffnen.
+Dabei wird der Buffer solange überschrieben, bis das Link Register überschrieben wird, und schreibt an dessen Stelle gewünschten Assembly Code.
 
+%% TODO: in IS bsp anschauen!!
 
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
+\begin{figure}[ht!]
+  \begin{center}
+    \includegraphics[scale=0.28]{figures/BufferOverflow.png}
+    \caption{Buffer Overflow}
+    \label{Abbildung 1: Buffer Overflow}
+  \end{center}
+\end{figure}
+
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 % Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
 % Einige Microcontroller (e.g. STM32F303) besitzen eine Memory Protection
 % Unit (MPU) mit speziellen Einstellunge
 
+% 0. keine fehler machen
 % 1. Data execution prevention (MPU=Memory Protection Unit)
 % 2. Protection Rings
 % 3. Address Space Layout Randomization (ASLR)
