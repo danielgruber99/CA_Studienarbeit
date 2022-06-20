@@ -62,11 +62,13 @@ acronym=totocnumbered
 \section*{Abkürzungsverzeichnis}
 \label{abkuerzungsverzeichnis}
 \begin{acronym}[AUTOSAR]
-\acro{ecu}[ECU]{Electronic Control Unit}
+  \acro{ecu}[ECU]{Electronic Control Unit}
+  \acro{mpu}[MPU]{Memory Protection Unit}
+  \acro{risc}[RISC]{Reduced Instruction Set Computer}
 \end{acronym}
 \newpage
 
-% ============================================================================== Kapitel 1: Einleitung ===============================================================================
+% ============================================================================== Kapitel 1: Einleitung ===========================================================================================================
 \section{Einleitung}
 Die Vernetzung im Fahrzeug sowohl mit dem Internet als auch intern nimmt immer weiter zu. Die Anzahl der \acs{ecu} ist von einer kleinen unabhängigen Architektur
 zu eine funktionsspezifischen und weiterhin zu einer zentralisierten Architektur gewachsen mit bis zu circa 150ECUS einem Premium Segement Fahrzeug.
@@ -92,84 +94,93 @@ eine Diskussion dargestellt, welche Maßnahmen dagegen getroffen werden können 
 %Die Cortex-M3-Architektur kann somit als Nachfolger für den ARM7 betrachtet werden und stellt mehr Rechenleistung als ein ARM7 bei geringerer Komplexität des Programmiermodells sowie geringerer Chipfläche zur Verfügung. Andere Untergruppen, wie z. B. der M1, sind z. B. für die Implementierung auf einem FPGA verfügbar.
 
 Die STM32 Mikrocontroller-Familie werden vom europäischen Halbleiterhersteller STMicroelectronics N.V. produziert, welche als eine der ersten Hersteller
-die CORTEX M3 Lizenz von der Firma ARM erworben haben.
-Der STM32 Controller zeichnet sich nämlich durch eine 32-Bit ARM Cortex-M0/M3/M4 CPU aus, die speziell für Mikrocontroller neu entwickelt wurde.
-Die Cortex M3 wird inoffziell als leistungsfähigerer Nachfolger der ARM7 TDMI Controller betrachtet.
+die CORTEX M3 Lizenz von der Firma ARM erworben hat.
+Der STM32 Controller zeichnet sich durch eine 32-Bit ARM Cortex-M0/M3/M4 CPU aus, die speziell für Mikrocontroller neu entwickelt wurde.
+ARM ist ein \ac*{risc}, welche den Vorteil von insbesondere einen kompakten Befehlssatz sowie vielen Registern hat.
+% Load/Store Register to register loading architecture!
+%Die Cortex M3 wird inoffziell als leistungsfähigerer Nachfolger der ARM7 TDMI Controller betrachtet.
+%Diese ARchitektur verwendet ausschließlich den THumb2 Befehlssatz.
+% RISC!
+%%%% LR REGISTER
+% BUFFER OVERLOW: wichtig, dass LR register da ist, da wird stack pointer gesichert und geladen, deswegen 2 funktionen um quasi return adr. zu überschreiben,
+% - Stores return address in LR
+% - Returning implemented by restoring the PC from LR
+% - For non-leaf functions, LR will have to be stacked
+Das Speichermodell bzw. der Adressierungsbereich von 4GB der CPU ist wie in der linken Abbildung dargestellt.
+Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in der rechten Abbildung dargestellt sind.
+Dabei ist insbesondere wichtig, dass der Stack nach unten, d.h. von höheren zu niedrigen Adressen wächst, was es ermöglicht,
+return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen.
+\begin{figure}[ht!]
+  \begin{minipage}[b]{.45\linewidth}
+    \includegraphics[scale=0.47]{figures/memory_model.png}
+    \caption{Memory map}
+    \label{Abbildung 1: Memory map}
+  \end{minipage}
+  \hspace{.1\linewidth}
+  \begin{minipage}[b]{.48\linewidth}
+    \includegraphics[width=\linewidth]{figures/flash_sram.png}
+    \caption{Flash und SRAM}
+    \label{Abbildung 6: Flash und SRAM}
+  \end{minipage}
+\end{figure}
 
-Diese ARchitektur verwendet ausschließlich den THumb2 Befehlssatz.
-Hauptbestandteil des Cortex M3 Prozessor, wie konkret beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
+Auch die Funktionsweise des LR Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
+Denn dieses speichert die Return addresse der Funktion. Erst wenn mehere Funktionen vorhanden sind wird die return Adresse auf dem Stack gespeichert und muss von
+diesem wieder geladen werden. Deswegen müssen bei der Überschreibung von Return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
+der returnadresse der äußeren Funktion zu ermöglichen
+\begin{figure}[ht!]
+\begin{center}
+  \includegraphics[scale=0.28]{figures/arm_register_set_detailled.png}
+  \caption{ARM Register Set}
+  \label{Abbildung 1: ARM Register Set}
+\end{center}
+\end{figure}
+
+Ein Hauptbestandteil des Cortex M3 Prozessors, wie beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
 Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
 Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
 somit der Adressraum dementsprechend linear programmiert werden kann.
-Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist sowie
-kein getrennter physikalischer Speicher für Daten und Befehle verwendet wird.
+Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
+Zudem ist hier kein getrennter physikalischer Speicher für Daten und Befehle vorhanden.
 Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
 verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
 Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
 % noch erwähnen, dass ARM CORTEX M3 Memory Protection besitzt
+Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
+Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können.
+% verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
+% Memmory access attributes ändern
+
+%%%% SPEICHERZUGRIFF
+% Der Speicherzugriff funktioniert wie auf folgender Abilldung dargestellt:\\
+% \begin{figure}[ht!]
+%   \begin{center}
+%     \includegraphics[scale=0.28]{figures/speicherzugriff_aktiv.png}
+%     \caption{Speicherzugriff}
+%     \label{Abbildung 1: Speicherzugriff}
+%   \end{center}
+% \end{figure}
+% Im Speicherzugriffsregister (Memory address register MAR) wird die Adresse angelegt, auf die im Speicher zugegriffen werden soll.
+% Anschließen wird im Adress Decode die Adresse entschlüsselt/übersetzt und die jewelige Addresslinie wird aktiv geschalten.
+% Daraufhin wird die aktiv geschaltene Linie, mit 8 indiviuellen Speicherzellen (jeweils 1 Bit), also insgesamt 1 Byte in
+% das Speicherregister geladen (Memory data register MDR).
+%%%%
+
+%%%% LITTLE ENDIAN
+Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
+% Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeichert:
+% \begin{figure}[ht!]
+%     \begin{center}
+%       \includegraphics[scale=0.28]{figures/speicher_littleEndian.png}
+%       \caption{Little Endian}
+%       \label{Abbildung 1: Little Endian}
+%     \end{center}
+% \end{figure}
+Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige Rolle, da beim Auslesen des
+Speichers dies zu berücksichtigen ist.
 
 
-
-% ADRESSIERUNGSMODI??? Speicherzugriff
-
-Der Speicherzugriff funktioniert wie auf folgender Abilldung dargestellt:
-
-\begin{figure}[ht!]
-    \begin{center}
-      \includegraphics[scale=0.28]{figures/speicherzugriff_aktiv.png}
-      \caption{Speicherzugriff}
-      \label{Abbildung 1: Speicherzugriff}
-    \end{center}
-  \end{figure}
-
-Im Speicherzugriffsregister (Memory address register MAR) wird die Adresse angelegt, auf die im Speicher zugegriffen werden soll.
-Anschließen wird im Adress Decode die Adresse entschlüsselt/übersetzt und die jewelige Addresslinie wird aktiv geschalten.
-Daraufhin wird die aktiv geschaltene Linie, mit 8 indiviuellen Speicherzellen (jeweils 1 Bit), also insgesamt 1 Byte in
-das Speicherregistier geladen (Memory data register MDR).
-
-% Little Endian, wichtig für Buffer Overflow beim Auslesen
-Des Weiteren ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
-Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeichert:
-
-\begin{figure}[ht!]
-    \begin{center}
-      \includegraphics[scale=0.28]{figures/speicher_littleEndian.png}
-      \caption{Little Endian}
-      \label{Abbildung 1: Little Endian}
-    \end{center}
-\end{figure}
-
-Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige ROlle, da beim Auslesen des
-Speicher dies zu berücksichtigen ist.
-
-
-%% BUFFER OVERLOW: wichtig, dass LR register da ist, da wird stack pointer gesichert und geladen, deswegen 2 funktionen um quasi return adr. zu überschreiben,
-%
-
-\comment{
-intern Harvard-Architektur, aber aus Programmierersicht von-Neumann-Architektur
-linearer Adressraum für Programme und Daten
-Sprungvorhersage
-Multiplikation in einem Takt
-Thumb2-Befehlsatz, der gegenüber dem Thumb-Befehlssatz 30% kompakteren Code erzeugt
-optimiert für Compilerprogrammierung
-einfaches Programmiermodell, keine Kenntnisse über den Prozessorkern notwendig
-hardwarebasierter Interrupt
-beim Interrupt werden die Register automatisch gesichert
-Memory-Protection
-Timer
-umfangreiche Peripherie (typabhängig)
-Debug und Tracemöglichkeiten in den Prozessor integriert
-geringer Stromverbrauch
-}
-
-%Mit einer 32-Bit ARM Cortex-M0/M3/M4 CPU ist diese Architektur
-%speziell für Mikrocontroller geegeinet, wobei es unzählige Varianten davon gibt.
-% Bisher werden diese in elf STM32 Famililen gegliedert: % 11 familien irgendwie zusammenfassen
-
-
-
-% ============================================================================== Kapitel 3: Schwachstellen ======================================================================================
+% ============================================================================== Kapitel 3: Schwachstellen =======================================================================================================
 \section{Schwachstellen}
 %%%%% MEMCMP TIMING ATTACKE
 \subsection{memcmp Timing Attacke für Bruteforcing}
@@ -362,16 +373,27 @@ derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 
 
 \subsubsection{Beispiel}
+% sieh Beispiel in Übung, Skizze machen
+
 \subsubsection{Prävention/Schutzmaßnahmen}
+% Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
+% Einige Microcontroller (e.g. STM32F303) besitzen eine Memory Protection
+% Unit (MPU) mit speziellen Einstellunge
+
+% 1. Data execution prevention (MPU=Memory Protection Unit)
+% 2. Protection Rings
+% 3. Address Space Layout Randomization (ASLR)
+% 4. Stack Canaries
+% 5. Watchdogs
 
 
-% ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ======================================================================================
+% ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
 \section{Besprechung der möglichen Skalierbarkeit}
 
 
 
-% ============================================================================== APPENDIX ===============================================================================
+% ============================================================================== APPENDIX =========================================================================================================================
 \begin{appendix}
 \newpage
 \listoffigures
@@ -383,6 +405,8 @@ derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 % DataSheeet von STM32F103C8: file:///C:/Users/danie/Downloads/stm32f103c8.pdf
 % McKinsey Studie ECU (für einleitung) https://www.mckinsey.com/~/media/mckinsey/industries/automotive%20and%20assembly/our%20insights/mapping%20the%20automotive%20software%20and%20electronics%20landscape%20through%202030/automotive-software-and-electronics-2030-final.pdf
 % Colin O'Flynn and Jasper van Woudenberg: The Hardware Hacking Handbook
+% MPU:  https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
+% memory model: https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
 \end{thebibliography}
 
 \cleardoublepage
