@@ -249,11 +249,6 @@ Damit erreicht man, dass die maximale Anzahl an Kombinatione maximal $10+10+10+1
 Das bedeutet, dass die Möglichkeiten bei der memcmp Timing Attack für Bruteforce gegenüber reinem Bruteforce nur noch $\frac{40}{1000} = \frac{4}{100} = 4\% $
 aller Möglichkeiten betragen.
 
-
-
-
-
-
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für obige Funktion gibt es eine Vielzahl von Schutzmaßnahmen, die im Wesentlichen solche Angriffe deutlich erschweren, aber nicht 100\%ig verhindern.
 Bei der Annahme, dass das Passwort in Klartext überprüft wird und nicht als gehashter Wert, werden insgesamt 4 Schutzmaßnahmen vorgestellt.
@@ -277,13 +272,8 @@ alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zur
 
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
 randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
-
 % zufällige Startzugriffe
-
-
 % decoy operations
-
-
 
 % Korrelationslose/Konstante Zeiten überall (Siehe letzte Folien):
 % • Keine Messbaren Funktionsaufrufe
@@ -304,7 +294,7 @@ randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von g
 Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
 Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz bringen.
 Diese Schwachstelle kann man beipsielsweise in printf, fprintf und weiteren print Funktionen ausnutzen.
-Das erste Argument ist der sogenannte Format String und die im Format String enthaltenen weiteren Parameter wie \%s, \%d, \%x und weitere werden durch nachfolgende
+Das erste Argument einer printf Funktion ist der sogenannte Format String und die im Format String enthaltenen weiteren Parameter, die mit \% beginnen, wie \%s, \%d, \%x und weitere, werden durch nachfolgende
 Argumente ersetzt. Die nachfolgende Abbildung verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
 Paramtern \%s und \%d als Argumente ersetzt werden.
 % Parameter im Format String beginnen mit %
@@ -316,20 +306,25 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
   \end{center}
 \end{figure}
 
-Falls die printf - Funktion unsicher programmiert ist, wie auf folgender Abbiludng zu sehen,
-kann der Nutzer/Angreifer als Eingabe mehrere \%x wie folgt eingeben: \%x\%x\%x\%x\%x
-Da die printf Aufruf ohne explizite Parameter aufgerufen wird, werden die Parameter von den Registern bzw. weiterführend vom Stack ausgelesen und als Hexadezimal zurückgegeben.
+Falls die printf - Funktion unsicher programmiert ist, wie in folgenden Code-Ausschnitt zu sehen,
+wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen und als Hexadezimal zurückgegeben werden.
+\begin{minted}{c}
+int main(){
+  char *input;
+  scanf("Enter any input", input);  // Input vom User z.B.: %x%x%x%x
+  printf(input);
+}
+\end{minted}
 Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
 Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert.
 
-Des Weiteren ist ees möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
+
+Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
 ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
 Hierbei muss man erst den Shell start in Assembly suchen. Mit der Format String Vulnerabilty muss man darauffolgend mit \%x die return Adresse
 der jeweiligen print Funktion herausfinden. Nachfolgend kann die Schwachstelle ausnutzen, indem man im Input die Adresse der return Adresse von printf schreibt
 und daraufhin \%n ausnutzt um eben an diese Adresse mit der Addresse zum Ausführen der Shell überschreiben.
 %% SHELL ANGRIFFSPLAN, NOCHMAL MIT DAWUTZ DRÜBER REDEN; VERSTEHEN,.....
-
-
 % Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
 % jedoch kann es sein dass dieser printf vulnerability noch in anderen aufgerufenen Funktione wie syslog oder irgnedwelchen libs enthalten ist,
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
