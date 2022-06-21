@@ -202,21 +202,20 @@ Wie viele Embedded Systems hat auch der STM32 kein Betriebssstem, das weitere Sc
 \subsection{memcmp Timing Attacke für Bruteforcing}
 \subsubsection{Beschreibung}
 Die memcmp Timing Attacke ist ein typischer Seitenkanal-Angriff. Diese Art von Angriffen basieren auf Informationen, die von der konkreten Implementierung eines Systems abhängen.
-Bei der memcpm Timing Attacke basiert dies auf dem Wissen über die Softwareimplementierung eines Vergleichs von Speicherbereichen.
+Bei der memcpm Timing Attacke basiert dies auf dem Wissen über die benötigte Zeit eines Vergleichs von Speicherbereichen, welche in der Software implementiert ist.
 %welche konkret in diesem Fall auf die Softwareimplementierung eines Vergleichs von Speicherbereichen.
-Denn im Fall, dass eine Speichervegleichsfunktion so implementiert ist, dass beim ersten nicht übereinstimmende vergleichenenen Zeichen von der Funktion 'false' zurückgegeben wird,
+Denn im Fall, dass eine Speichervegleichsfunktion so implementiert ist, dass beim ersten nicht übereinstimmendem verglichenen Zeichen von der Funktion 'false' zurückgegeben wird,
 benötigt der Vergleich unterschiedlich lange, je nach Anzahl richtiger Buchstaben einer Zeichenkette.
 Hier wird konkret der Aspekt der Zeit ausgenutzt, denn die Dauer der Funktion hängt von den zu vergleichenden Speicherbereichen ab.
 Je länger die Funktion benötigt, desto mehr Buchstaben waren beim entsprechenden Vergleich richtig.
 Diese Information der Dauer einer Funktion je nach Vergleich kann man nun ausnutzen, um Bruteforcing bei Passworteingaben deutlich zu optimieren.
-Bei 'normalen' Bruteforcing müssen alle Kombinationen durchrpobiert werden, d.h.
-bei einem Passwort der Länge 6 müssen bis zu $|A|*|A|*|A|*|A|*|A|*|A| = |A|^6$ Möglichkeiten durchprobiert werden.
-$|A|$ ist die Mächtigkeit der möglichen Eingabezeichen.
+Bei 'normalen' Bruteforcing müssen alle Kombinationen betrachtet werden, d.h.
+bei einem Passwort der Länge 6 sind $|A|*|A|*|A|*|A|*|A|*|A| = |A|^6$ Kombinationen möglich, wobei $|A|$ die Mächtigkeit der möglichen Eingabezeichen ist.
 Dahingegen kann bei einer memcmp Timing Attacke Stelle für Stelle durchprobiert werden, und die Auswahl für die jeweilige Stelle, die am längsten benötigt hat,
 wird als 'richtig' übernommen, denn dann hat die Vegleichsfunktion für die jeweilige Stelle einen erfolgreichen Vergleich durchgeführt.
 Dies führt dazu, dass die nächste Stelle überprüft wird, was bedeutet, dass die Funktion dafür mehr Zeit braucht.
 Insgesamt führt die memcmp Timing Attacke also zu einer erheblichen Verbesserung, indem beim Fall der Passwortlänge von 6
-nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Möglichkeiten durchprobiert werden müssen.
+nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Kombinationen möglich sind.
 
 \textit{Anmerkung} \mbox{} \\
 In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige CLock Cycles für den Vergleich benötigt werden.
@@ -225,7 +224,7 @@ Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Log
 für den Vergleich am Embedded System zu messen.
 
 \subsubsection{Beispiel}
-In diesem Abschnitt wird ein repräsentatives Beispiel für oben genannte Schwachstelle dargestellt.
+In diesem Abschnitt wird ein repräsentatives Beispiel für oben beschriebene Schwachstelle dargestellt.
 Der Einfachkeit halber wird ein PIN Vergleich der begrenzten Länge 4 durchgeführt, wobei das Alphabet 0-9 ist, d.h. eine Mächtigkeit von $|A| = 10$ besitzt.
 %Dies gilt ohne Beschränkung der Allgemeinheit und kann beliebig in der Länge sowie der Mächtigkeit des Alphabets verändert werden.
 Zudem wird die Annahme getroffen, dass der Pin Vergleich erst nach vollständiger Pineingabe erfolgt. Dabei
@@ -242,8 +241,8 @@ bool pin_correct(char *input){
 }
 \end{minted}
 
-Für reines Raten, d.h. Bruteforcing ohne weitere Kenntnisse, sind eine gesamte Anzahl von $ 10*10*10*10 = 10^4 $ Kombinationen möglich.
-Um die Anzahl der Kombinationen deutlich zu reduzieren kann man den Vorteil des Wissens über die obige Funktion nutzen und damit
+Für reines Raten, d.h. Bruteforcing ohne weitere Kenntnisse, sind $ 10*10*10*10 = 10^4 $ Kombinationen möglich.
+Um die Anzahl der Kombinationen deutlich zu reduzieren, kann man den Vorteil des Wissens über die obige Funktion nutzen und damit
 die memcmp Timing Attacke verwenden.
 Denn obiger Code Ausschnitt gibt beim ersten nicht korrekten Zeichen 'false' zurück, weshalb die die Ausführungsdauer der
 Funktion von der Anzahl der richtig eingegebenen Pin Stellen abhängt.
@@ -255,9 +254,14 @@ eine Zeitmessung durchgeführt wird.
 Folgende zwei Abbildungen stellen für die erste Eingabestelle dar, wie sich die Vergleichszeit im
 korrekten Fall ($t_correct$) zum Fehlerfall ($t_bad$) unterscheidet.
 Da der korrekte Pin 1337 ist, wird für die Eingabe 1000 die Vergleichszeit länger dauern, wie in $t_correct$ dargestellt.
-Für alle anderen Möglichkeiten wird die linke Abbildung mit $t_bad$ zutreffen.
-%Für $t_bad$ kann man als Beispieleingabe \textit{0000, 2000, 3000, ..., 9000} verwenden, während
-%der korrekte Fall $t_correct$ die Eingabe  \textit{1000} zutrifft.
+Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
+\begin{figure}[ht!]
+  \begin{center}
+    \includegraphics[scale=0.28]{figures/timing_attack_duration_example.jpeg}
+    \caption{ARM Register Set}
+    \label{Abbildung 1: ARM Register Set}
+  \end{center}
+\end{figure}
 Diese Angriff wird für jede Möglichkeit der nächsten Stelle bis zur letzten Stelle druchgeführt ausgehend vor der korrekten Eingabe der jeweils vorherigen Stellen.
 Bei der letzten Stelle ist die Zeitmessung überflüssig, denn im korrekten Fall hat man das System entsperrt.
 Der Vorteil dieser Methode ist, dass die PIN Stellen sequentiell ausgehend vom Wissen über die Position richtig erraten werden.
@@ -288,6 +292,9 @@ alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zur
 
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
 randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
+
+Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jedem Vergleich
+wird eine andere Position als erste Stelle verglichen.
 % zufällige Startzugriffe
 % decoy operations
 
@@ -309,9 +316,11 @@ randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von g
 \subsubsection{Beschreibung}
 Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
 Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz bringen.
-Diese Schwachstelle kann man beipsielsweise in printf, fprintf und weiteren print Funktionen ausnutzen.
-Das erste Argument einer printf Funktion ist der sogenannte Format String und die im Format String enthaltenen weiteren Parameter, die mit \% beginnen, wie \%s, \%d, \%x und weitere, werden durch nachfolgende
-Argumente ersetzt. Die nachfolgende Abbildung verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
+Diese Schwachstelle basiert auf variadische Funktionen, d.h. Funktionen, die eine variable Anzahl an Argumenten akzeptieren.
+Eine von jedem C Programmiere benutzere variadische Funktion ist beipsielsweisedie printf Funktion.
+Das erste Argument einer printf Funktion ist der sogenannte Format String, der mit den angegebenen Paramtern beginnend mit \%, wie \%s, \%d, \%x usw., besimmt, wie nachfolgende Parameter
+als Argumente verwendet werden.
+Die nachfolgende Abbildung verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
 Paramtern \%s und \%d als Argumente ersetzt werden.
 % Parameter im Format String beginnen mit %
 \begin{figure}[ht!]
@@ -323,7 +332,9 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
 \end{figure}
 
 Falls die printf - Funktion unsicher programmiert ist, wie in folgenden Code-Ausschnitt zu sehen,
-wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen und als Hexadezimal zurückgegeben werden.
+wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen werden.
+Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriff auf Register bzw. Stack,
+durchgeführt werden.
 \begin{minted}{c}
 int main(){
   char *input;
@@ -332,7 +343,7 @@ int main(){
 }
 \end{minted}
 Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
-Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert.
+Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert sind.
 
 
 Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
