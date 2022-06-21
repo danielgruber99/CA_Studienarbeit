@@ -25,7 +25,7 @@ acronym=totocnumbered
 
 \newcommand{\comment}[1]{}
 \date{\today}
-\title{Vulnerabilty eingebetteter Systeme}
+\title{Vulnerability eingebetteter Systeme}
 \author{Gruber Daniel}
 \studentid{3214109}
 \documenttype{Studienarbeit}
@@ -33,10 +33,9 @@ acronym=totocnumbered
 \startingdate{14.\,März 2022}
 \closingdate{20.\,Juli 2022}
 
-\firstadvisor{Jonas Schmidt}
+\firstadvisor{Schmidt Jonas}
 %\secondadvisor{Herr Altmann}
 %\externaladvisor{Dr. Klara Endlos}
-
 %\externallogo[height=1.5cm]{firmenlogo}
 
 
@@ -70,15 +69,21 @@ acronym=totocnumbered
 
 % ============================================================================== Kapitel 1: Einleitung ===========================================================================================================
 \section{Einleitung}
-Die Vernetzung im Fahrzeug sowohl mit dem Internet als auch intern nimmt immer weiter zu. Die Anzahl der \acs{ecu} ist von einer kleinen unabhängigen Architektur
-zu eine funktionsspezifischen und weiterhin zu einer zentralisierten Architektur gewachsen mit bis zu circa 150ECUS einem Premium Segement Fahrzeug.
-Mit dem starken Anstieg von \acs{ecu} im Auto nimmt einerseits die Funktionialität für den Nutzer zu, jedoch bilden sich durch mehr Software und Funktionialität
-mehr Angriffsmöglichkeiten auf das System \"Auto\" an sich. Hier ist es neben sicherem Code schreiben (Software) auch ein sehr wichtiger Aspekt
-die Hardware zu kennen und insbesondere deren Schwachstellen.
-In dieser Arbeit wird auf die STM32 Architektur eingegangen und anhand dieser drei typische Schwachstellen erklärt. Zudem wird zu jeder dieser
-Schwachstellen Präventionsmaßnahmen beschrieben.
-Abschließend wird die Skalierbarkeit einer dieser Schwachstellen in Form eines xxxxxx Angnriffes auf ein Fahrzeug aufgegriffen und darüber
-eine Diskussion dargestellt, welche Maßnahmen dagegen getroffen werden können und welche Vorteile/Nachteile diese Maßnahmen haben.
+%Die Vernetzung im Fahrzeug sowohl mit dem Internet als auch intern zwischen den verschiedenen Steuergeräten nimmt immer weiter zu.
+%Die Anzahl der \acs{ecu} ist von einer kleinen unabhängigen Architektur zu eine funktionsspezifischen und weiterhin zu einer zentralisierten Architektur gewachsen mit bis zu circa 150ECUS einem Premium Segement Fahrzeug.
+%Mit dem starken Anstieg von \acs{ecu} im Auto nimmt einerseits die Funktionialität für den Nutzer zu, jedoch bilden sich durch mehr Software und Funktionialität
+%mehr Angriffsmöglichkeiten auf das System \"Auto\" an sich. Hier ist es neben sicherem Code schreiben (Software) auch ein sehr wichtiger Aspekt
+%die Hardware zu kennen und insbesondere deren Schwachstellen.
+Embedded Systems befinden sich bereits in vielen Gegenständen und Geräten unseres täglichen Lebens, auch im Auto.
+Die Vernetzung im Fahrzeug nimmt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus sind.
+Die Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
+bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
+sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
+Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff(Side channel attack), der Buffer Overflow und die Format String Vulnerabilty.
+In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
+Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
+Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format String Vulnerabilty auf das Infotainmentsystem eines Fahrzeuges aufgegriffen und besprochen.
+%darüber eine Diskussion dargestellt, welche Maßnahmen dagegen getroffen werden können und welche Vorteile/Nachteile diese Maßnahmen haben.
 
 
 % ============================================================================== Kapitel 2: Vorstellung wichtiger Rahmenbedinungen ===============================================================================
@@ -179,7 +184,7 @@ Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Litt
 Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige Rolle, da beim Auslesen des
 Speichers dies zu berücksichtigen ist.
 
-
+Wie viele Embedded Systems hat auch der STM32 kein Betriebssstem, das weitere Schutzmechanismen bieten würde.
 % Kein OS, das irgendwelche Sdchutzmechanismen bieten würde!!!!
 
 
