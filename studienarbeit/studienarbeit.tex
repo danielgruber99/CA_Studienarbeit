@@ -154,8 +154,10 @@ return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder ein
   \end{minipage}
 \end{figure}
 
+% Stack Pointer, PC Register, LR Register
 Auch die Funktionsweise des LR Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
-Denn dieses speichert die Return addresse der Funktion. Erst wenn mehrere Funktionen vorhanden sind, wird die return Adresse auf dem Stack gespeichert und muss von
+Denn dieses speichert die Return addresse der Funktion, welche nachfolgend dann in das Program Counter (PC) geladen wird, das angibt, wo das Progamm forsetzt.
+Erst wenn mehrere Funktionen vorhanden sind, wird die return Adresse auf dem Stack gespeichert und muss von
 diesem wieder geladen werden. Deswegen müssen bei der Überschreibung von Return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
 der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
 \begin{figure}[ht!]
@@ -391,6 +393,8 @@ Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schut
 das sichere Programmieren, indem man die Paramter \%s, \%d, ... korrekt benutzt.
 Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
 derartige möglicherweise schädliche Eingaben nicht zuzulassen.
+COMPILER BASED COUNTERMEASURES
+%%% 6. Compiler based Countermeasueres
 
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow (ROP)}
@@ -436,7 +440,6 @@ Ausnutzung des ROP Angriffs um andere Funktion aufzurufen
 % 3. Address Space Layout Randomization (ASLR)
 % 4. Stack Canaries
 % 5. Watchdogs
-% 6. Compiler based Countermeasueres
 Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
 Eine davon, die \ac*{dep} umgesetzt durch die \ac*{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac*{rop} nicht verhindert.
 
