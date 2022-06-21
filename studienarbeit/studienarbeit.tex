@@ -89,13 +89,10 @@ Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format S
 % ============================================================================== Kapitel 2: Vorstellung wichtiger Rahmenbedinungen ===============================================================================
 \section{Vorstellung wichtiger Rahmenbedingungen}
 % Architekturmerkmale, Adressierungsmoid, Ausführungsmodelle, Betriebssstem
-
 % Architektur des STM32F103C8T6 ARM®Cortex®-M3 32-bit RISC core, 72MHz, 64KB (64Kx8) Flash
 % ARM v5 32 little endian
 % Adapted Harvard Architektur: getrennte Busse für Befehle und Daten, aber beides liegt im Flash
-
 %STM32F103C8T6	32Bit MCU, ARM CORTEX M3, Flash 64KB, RAM 20KB, IO 37, A/D 10x12b, 72MHz, LQFP48
-
 %Die Cortex-M3-Architektur kann somit als Nachfolger für den ARM7 betrachtet werden und stellt mehr Rechenleistung als ein ARM7 bei geringerer Komplexität des Programmiermodells sowie geringerer Chipfläche zur Verfügung. Andere Untergruppen, wie z. B. der M1, sind z. B. für die Implementierung auf einem FPGA verfügbar.
 
 Die STM32 Mikrocontroller-Familie werden vom europäischen Halbleiterhersteller STMicroelectronics N.V. produziert, welche als eine der ersten Hersteller
@@ -111,7 +108,32 @@ ARM ist ein \ac*{risc}, welche den Vorteil von insbesondere einen kompakten Befe
 % - Stores return address in LR
 % - Returning implemented by restoring the PC from LR
 % - For non-leaf functions, LR will have to be stacked
-Das Speichermodell bzw. der Adressierungsbereich von 4GB der CPU ist wie in der linken Abbildung dargestellt.
+
+Ein Hauptbestandteil des Cortex M3 Prozessors, wie beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
+Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
+Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
+somit der Adressraum dementsprechend linear programmiert werden kann.
+Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
+Zudem ist hier kein getrennter physikalischer Speicher für Daten und Befehle vorhanden, denn beides befindet sich im Flash, worauf sowohl der Datenbus (DBUS) und Befehlsbus (IBUS) zugreift, wie auf
+nachfolgender Abbildung zu sehen.
+\begin{figure}[ht!]
+  \begin{center}
+    \includegraphics[scale=0.28]{figures/stm_architecture.png}
+    \caption{STM Architecture}
+    \label{Abbildung 1: STM Architecture}
+  \end{center}
+\end{figure}
+Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
+verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
+Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
+% noch erwähnen, dass ARM CORTEX M3 Memory Protection besitzt
+Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
+Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können.
+% verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
+% Memmory access attributes ändern
+
+%%%%%% SPEICHERMODELL
+Das Speichermodell bzw. der Adressierungsbereich von möglichen 4GB der CPU ist in der linken Abbildung dargestellt.
 Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in der rechten Abbildung dargestellt sind.
 Dabei ist insbesondere wichtig, dass der Stack nach unten, d.h. von höheren zu niedrigen Adressen wächst, was es ermöglicht,
 return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen.
@@ -130,9 +152,9 @@ return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder ein
 \end{figure}
 
 Auch die Funktionsweise des LR Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
-Denn dieses speichert die Return addresse der Funktion. Erst wenn mehere Funktionen vorhanden sind wird die return Adresse auf dem Stack gespeichert und muss von
+Denn dieses speichert die Return addresse der Funktion. Erst wenn mehrere Funktionen vorhanden sind, wird die return Adresse auf dem Stack gespeichert und muss von
 diesem wieder geladen werden. Deswegen müssen bei der Überschreibung von Return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
-der returnadresse der äußeren Funktion zu ermöglichen
+der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
 \begin{figure}[ht!]
 \begin{center}
   \includegraphics[scale=0.28]{figures/arm_register_set_detailled.png}
@@ -141,20 +163,6 @@ der returnadresse der äußeren Funktion zu ermöglichen
 \end{center}
 \end{figure}
 
-Ein Hauptbestandteil des Cortex M3 Prozessors, wie beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
-Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
-Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
-somit der Adressraum dementsprechend linear programmiert werden kann.
-Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
-Zudem ist hier kein getrennter physikalischer Speicher für Daten und Befehle vorhanden.
-Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
-verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
-Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
-% noch erwähnen, dass ARM CORTEX M3 Memory Protection besitzt
-Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
-Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können.
-% verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
-% Memmory access attributes ändern
 
 %%%% SPEICHERZUGRIFF
 % Der Speicherzugriff funktioniert wie auf folgender Abilldung dargestellt:\\
