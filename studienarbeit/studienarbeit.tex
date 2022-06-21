@@ -64,6 +64,9 @@ acronym=totocnumbered
   \acro{ecu}[ECU]{Electronic Control Unit}
   \acro{mpu}[MPU]{Memory Protection Unit}
   \acro{risc}[RISC]{Reduced Instruction Set Computer}
+  \acro{dep}[DEP]{Data Execution Prevention}
+  \acro{rop}[ROP]{Return Orientated Programming}
+  \acro{aslr}[ASLR]{Adress Space Layout Randomization}
 \end{acronym}
 \newpage
 
@@ -293,9 +296,9 @@ alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zur
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
 randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
 
+% zufällige Startzugriffe
 Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jedem Vergleich
 wird eine andere Position als erste Stelle verglichen.
-% zufällige Startzugriffe
 % decoy operations
 
 % Korrelationslose/Konstante Zeiten überall (Siehe letzte Folien):
@@ -396,13 +399,24 @@ derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 % https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
 Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer, beispielsweise ein Array in der Programmiersprache C, versucht zu speichern, als
 dieser umfasst.
-In einem konkreten Angriff kann man diese Schwachstelle nutzen, um Assembly in den Stack zu schreiben, um mit diesen beispielsweise eine (admin) shell zu öffnen.
-Dabei wird der Buffer solange überschrieben, bis das Link Register überschrieben wird, und schreibt an dessen Stelle gewünschten Assembly Code.
+Die Eingabe überschreitet die Grenzen des Buffers und überschreibt damit andere Daten, die außerhalb des Buffers gespeichert sind.
+Diese Schwachstelle kann in zwei verschiedenen Kontexten auftreten, nämlich in einem Stack- oder in einem Heap Buffer Overflow.
+In diesem Kapitel wird der Fokus auf den Stack Buffer Overflow gelegt, wobei man im Wesentlichen in zwei verschiedenen Angriffsarten unterscheidet.
+Ein Angriff basiert auf der Idee eigenen Code einzufügen und diesen auszuführen, indem der return adresse der Funktion so überschrieben wird, dass die Funktion
+mit eigens eingefügten Code ausgeführt wird. Diese Art von Angriff ist relativ leicht zu verhindern, indem eine \ac{dep} verwendet wird.
+Wie im Kapitel 2 erwähnt, ist hierfür die \ac*{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar markiert.
 
+Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung angebracht, indem die return Adresse mit der Adresse
+dieser gewünschten Funktion überschrieben wird. Dieser Angriffstyp ist als \ac*{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
+% TODO; noch genauer mit %esp beschreiben, evtl mit Bild?
 %% TODO: in IS bsp anschauen!!
+
+%%zwei fälle unterscheiden: quasieigenen shell code platzieren im Stack und diesen ausführen -> verhinderbar durch DEP (Data execution prevention mit iener MPU) (stack non exec. machen!)
+%% 2. fall: ROP, return orientated programming, quasi return adresse zu bereist bestehendem Code angeben, der z.B. shell öffnet.
 
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
+Ausnutzung des ROP Angriffs um andere Funktion aufzurufen
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.28]{figures/BufferOverflow.png}
@@ -416,19 +430,22 @@ Dabei wird der Buffer solange überschrieben, bis das Link Register überschrieb
 % Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
 % Einige Microcontroller (e.g. STM32F303) besitzen eine Memory Protection
 % Unit (MPU) mit speziellen Einstellunge
-
 % 0. keine fehler machen
 % 1. Data execution prevention (MPU=Memory Protection Unit)
 % 2. Protection Rings
 % 3. Address Space Layout Randomization (ASLR)
 % 4. Stack Canaries
 % 5. Watchdogs
+% 6. Compiler based Countermeasueres
+Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
+Eine davon, die \ac*{dep} umgesetzt durch die \ac*{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac*{rop} nicht verhindert.
 
+Für diesen Angriffstyp ist
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
 \section{Besprechung der möglichen Skalierbarkeit}
-
+% https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
 
 
 % ============================================================================== APPENDIX =========================================================================================================================
@@ -445,6 +462,8 @@ Dabei wird der Buffer solange überschrieben, bis das Link Register überschrieb
 % Colin O'Flynn and Jasper van Woudenberg: The Hardware Hacking Handbook
 % MPU:  https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
 % memory model: https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
+% Besprechung der mögl. Skalierbarkeit: https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
+% Buffer Overflow ROP: file:///C:/Users/danie/OneDrive/Return-Oriented_Programming.pdf, https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6375725,
 \end{thebibliography}
 
 \cleardoublepage
