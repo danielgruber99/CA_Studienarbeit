@@ -57,7 +57,6 @@ acronym=totocnumbered
 \tableofcontents
 \newpage
 
-%Hier schonmal Abkürzungsberzeichnis vorbereitet. Im Text kann mit \ac{Abk} auf die Abkürzung referenziert werden. Es wird automatisch beim ersten referenzieren die volle Schreibweise genommen, ab dann immer die abkürzung
 \section*{Abkürzungsverzeichnis}
 \label{abkuerzungsverzeichnis}
 \begin{acronym}[AUTOSAR]
@@ -75,13 +74,8 @@ acronym=totocnumbered
 % ============================================================================== Kapitel 1: Einleitung ===========================================================================================================
 \section{Einleitung}
 \label{sec:Einleitung}
-%Die Vernetzung im Fahrzeug sowohl mit dem Internet als auch intern zwischen den verschiedenen Steuergeräten nimmt immer weiter zu.
-%Die Anzahl der \acs{ecu} ist von einer kleinen unabhängigen Architektur zu eine funktionsspezifischen und weiterhin zu einer zentralisierten Architektur gewachsen mit bis zu circa 150ECUS einem Premium Segement Fahrzeug.
-%Mit dem starken Anstieg von \acs{ecu} im Auto nimmt einerseits die Funktionialität für den Nutzer zu, jedoch bilden sich durch mehr Software und Funktionialität
-%mehr Angriffsmöglichkeiten auf das System \"Auto\" an sich. Hier ist es neben sicherem Code schreiben (Software) auch ein sehr wichtiger Aspekt
-%die Hardware zu kennen und insbesondere deren Schwachstellen.
 Embedded Systems befinden sich bereits in vielen Gegenständen und Geräten unseres täglichen Lebens, auch im Auto.
-Die Vernetzung im Fahrzeug nimmt im aktuellen Jahrzent deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
+Die Vernetzung im Fahrzeug und damit auch die Anzahl von Mikrocontroller nehmen im aktuellen Jahrzehnt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
 Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
 sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
@@ -89,7 +83,6 @@ Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für e
 In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
 Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
 Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format String Vulnerabilty auf das Infotainmentsystem eines Fahrzeuges aufgegriffen und besprochen.
-%darüber eine Diskussion dargestellt, welche Maßnahmen dagegen getroffen werden können und welche Vorteile/Nachteile diese Maßnahmen haben.
 
 
 % ============================================================================== Kapitel 2: Vorstellung wichtiger Rahmenbedinungen ===============================================================================
@@ -107,16 +100,12 @@ die CORTEX M3 Lizenz von der Firma ARM erworben hat.
 Der STM32 Controller zeichnet sich durch eine 32-Bit ARM Cortex-M0/M3/M4 CPU aus, die speziell für Mikrocontroller neu entwickelt wurde.
 ARM ist ein \ac{risc}, welche den Vorteil von insbesondere einen kompakten Befehlssatz sowie vielen Registern hat.
 % TODO: RISC Genauer erklären
-% Load/Store Register to register loading architecture!
-%Die Cortex M3 wird inoffziell als leistungsfähigerer Nachfolger der ARM7 TDMI Controller betrachtet.
-%Diese ARchitektur verwendet ausschließlich den THumb2 Befehlssatz.
-% RISC!
-%%%% LR REGISTER
+
 % BUFFER OVERLOW: wichtig, dass LR register da ist, da wird stack pointer gesichert und geladen, deswegen 2 funktionen um quasi return adr. zu überschreiben,
 % - Stores return address in LR
 % - Returning implemented by restoring the PC from LR
 % - For non-leaf functions, LR will have to be stacked
-%TODO: überdenken, ob HARVARD architektur noch genauer beschreiben
+% TODO: überdenken, ob HARVARD architektur noch genauer beschreiben
 Ein Hauptbestandteil des Cortex M3 Prozessors, wie beim STM32F103C8T6 vorhanden, ist die dreistufige Pipeline, die auf der Harvard Architektur basiert.
 Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
 Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
@@ -134,11 +123,10 @@ nachfolgender Abbildung zu sehen.
 Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
 verliert man den Nachteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in Neumann, dass der Programmcode manipuliert werden kann.
 Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
-% noch erwähnen, dass ARM CORTEX M3 Memory Protection besitzt
 
 Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
 Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können.
-%TODO: ausführlich erklären hier!!
+% TODO: MPU ausführlich erklären hier!!
 % verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
 % Memmory access attributes ändern
 
@@ -273,7 +261,7 @@ Da der korrekte Pin 1337 ist, wird für die Eingabe 1000 die Vergleichszeit län
 Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
 \begin{figure}[ht!]
   \begin{center}
-    \includegraphics[scale=0.28]{figures/timing_attack_duration_example.jpeg}
+    \includegraphics[scale=0.28]{figures/timing_attack_duration_example_cropped.jpeg}
     \caption{Timing Attack}
     \label{fig: Timing Attack}
   \end{center}
@@ -312,7 +300,7 @@ randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von g
 % zufällige Startzugriffe
 Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jedem Vergleich
 wird eine andere Position als erste Stelle verglichen.
-% decoy operations
+% TODO: decoy operations,randomisierung von startzugriffen bsp. zeigen
 
 % Korrelationslose/Konstante Zeiten überall (Siehe letzte Folien):
 % • Keine Messbaren Funktionsaufrufe
@@ -361,13 +349,11 @@ int main(){
 Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
 Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert sind.
 
-
 Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
 ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
 Hierbei muss man erst den Shell start in Assembly suchen. Mit der Format String Vulnerabilty muss man darauffolgend mit \%x die return Adresse
 der jeweiligen print Funktion herausfinden. Nachfolgend kann die Schwachstelle ausnutzen, indem man im Input die Adresse der return Adresse von printf schreibt
 und daraufhin \%n ausnutzt um eben an diese Adresse mit der Addresse zum Ausführen der Shell überschreiben.
-%% SHELL ANGRIFFSPLAN, NOCHMAL MIT DAWUTZ DRÜBER REDEN; VERSTEHEN,.....
 % Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
 % jedoch kann es sein dass dieser printf vulnerability noch in anderen aufgerufenen Funktione wie syslog oder irgnedwelchen libs enthalten ist,
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
@@ -407,13 +393,11 @@ das sichere Programmieren, indem man die Paramter \%s, \%d, ... korrekt benutzt.
 Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
 derartige möglicherweise schädliche Eingaben nicht zuzulassen.
 COMPILER BASED COUNTERMEASURES
-%%% 6. Compiler based Countermeasueres
+%%% TODO: 6. Compiler based Countermeasueres
 
 %%%%% BUFFER OVERFLOW (ROP)
-\subsection{Buffer Overflow und \ac{rop}}
+\subsection{Buffer Overflow und ROP}
 \subsubsection{Beschreibung}
-% https://owasp.org/www-community/attacks/Buffer_overflow_attack
-% https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
 Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer, beispielsweise ein Array in der Programmiersprache C, versucht zu speichern, als
 dieser umfasst.
 Die Eingabe überschreitet die Grenzen des Buffers und überschreibt damit andere Daten, die außerhalb des Buffers gespeichert sind.
@@ -427,11 +411,6 @@ Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier wer
 dieser gewünschten Funktion überschrieben wird. %% TODO: hier noch schreiben, dass diese vorhandenen Funkt. nicht in SRAM, deswegen bringt DEP/MPU nix?
 Dieser Angriffstyp ist als \ac{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
 Im folgenden Beispiel wird ein \ac{rop} Angriff mit Berücksichtigung der Eigenschaften des STM32 dargestellt.
-% TODO; noch genauer mit %esp beschreiben, evtl mit Bild?
-%% TODO: in IS bsp anschauen!!
-
-%%zwei fälle unterscheiden: quasieigenen shell code platzieren im Stack und diesen ausführen -> verhinderbar durch DEP (Data execution prevention mit iener MPU) (stack non exec. machen!)
-%% 2. fall: ROP, return orientated programming, quasi return adresse zu bereist bestehendem Code angeben, der z.B. shell öffnet.
 
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
@@ -520,15 +499,33 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 
 \cleardoublepage
 \newpage
+
+%% BIBLIOGRAPHY
+%% add citations with "\cite{source name}"
 \begin{thebibliography}{99}
-\bibitem{Nemo} Dr. Nemo: \textit{Submarines through the ages}, Atlantis, 1876.
+\bibitem{Hardware Hacking Handbook} Colin O'Flynn and Jasper van Woudenberg: \textit{The Hardware Hacking Handbook}, No Starch Press, 21 Dec. 2021.
+% Für Besprechung der möglichen Skalierbarkeit automotive security (Einleitung und letztes Kapitel)
+\bibitem{car format string vuln.} Automotive Security, \textit{Automotive Security}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. \\https://www.bmwgroup-werke.com/de.html.https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
+%\bibitem{STM Data Sheet} STM32 Data Sheet, \textit{STM32 Data Sheet}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
+%\bibitem{STM MPU} STM32 Memory Protection Unit, \textit{STM32 Memory Protection Unit}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
 % DataSheeet von STM32F103C8: file:///C:/Users/danie/Downloads/stm32f103c8.pdf
 % McKinsey Studie ECU (für einleitung) https://www.mckinsey.com/~/media/mckinsey/industries/automotive%20and%20assembly/our%20insights/mapping%20the%20automotive%20software%20and%20electronics%20landscape%20through%202030/automotive-software-and-electronics-2030-final.pdf
-% Colin O'Flynn and Jasper van Woudenberg: The Hardware Hacking Handbook
 % MPU:  https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
 % memory model: https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-% Besprechung der mögl. Skalierbarkeit: https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
 % Buffer Overflow ROP: file:///C:/Users/danie/OneDrive/Return-Oriented_Programming.pdf, https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6375725,
+
+% OWASP
+% OWASP Buffer Overflow: https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
+% OWASP Buffer Overflow Attack: https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
+% OWASP Format String Vuln.: https://owasp.org/www-community/attacks/Format_string_attack
+
+% IS FOliensatz: IS-03-Schwachstellen-2.pdf(für Buffer Overflow)
+% CA folienSatz 01 ARM: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/01_ARM.pdf ( für vorstellung wichtiger rahmenbed., RISC, HAVARD, VON NEUMANN, ...)
+% CA FOliensatz 02 Speicherverwaltung: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/02_Speicherverwaltung.pdf (für Format String VUln und Buffer Overflow)
+% CA Foliensatz 03 Seitenkanäle: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/03_Seitenkana%CC%88le.pdf (für memcmp timing attack)
+% CA Quelle: https://courses.cs.washington.edu/courses/cse474/17wi/pdfs/lectures/03-arm_overview.pdf (ARM)
+% CA Quelle: https://codearcana.com/posts/2013/05/02/introduction-to-format-string-exploits.html (FORMAT String)
+
 \end{thebibliography}
 
 \cleardoublepage
