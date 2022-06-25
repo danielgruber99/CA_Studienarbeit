@@ -61,6 +61,7 @@ acronym=totocnumbered
 \section*{Abkürzungsverzeichnis}
 \label{abkuerzungsverzeichnis}
 \begin{acronym}[AUTOSAR]
+  \acro{aslr}[ASLR]{Address Space Layout Randomization}
   \acro{ecu}[ECU]{Electronic Control Unit}
   \acro{mpu}[MPU]{Memory Protection Unit}
   \acro{risc}[RISC]{Reduced Instruction Set Computer}
@@ -78,11 +79,11 @@ acronym=totocnumbered
 %mehr Angriffsmöglichkeiten auf das System \"Auto\" an sich. Hier ist es neben sicherem Code schreiben (Software) auch ein sehr wichtiger Aspekt
 %die Hardware zu kennen und insbesondere deren Schwachstellen.
 Embedded Systems befinden sich bereits in vielen Gegenständen und Geräten unseres täglichen Lebens, auch im Auto.
-Die Vernetzung im Fahrzeug nimmt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus sind.
+Die Vernetzung im Fahrzeug nimmt im aktuellen Jahrzent deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
 Die Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
-sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
-Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff(Side channel attack), der Buffer Overflow und die Format String Vulnerabilty.
+sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
+Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff(Side channel attack), Buffer Overflows und Format String Vulnerabilities.
 In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
 Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
 Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format String Vulnerabilty auf das Infotainmentsystem eines Fahrzeuges aufgegriffen und besprochen.
@@ -116,7 +117,7 @@ Ein Hauptbestandteil des Cortex M3 Prozessors, wie beim STM32F103C8T6 vorhanden,
 Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
 Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
 somit der Adressraum dementsprechend linear programmiert werden kann.
-Hier spricht man oft von eine Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
+Hier spricht man von einer Adeptive Harvard Architektur, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
 Zudem ist hier kein getrennter physikalischer Speicher für Daten und Befehle vorhanden, denn beides befindet sich im Flash, worauf sowohl der Datenbus (DBUS) und Befehlsbus (IBUS) zugreift, wie auf
 nachfolgender Abbildung zu sehen.
 \begin{figure}[ht!]
@@ -155,14 +156,17 @@ return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder ein
 \end{figure}
 
 % Stack Pointer, PC Register, LR Register
-Auch die Funktionsweise des LR Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
-Denn dieses speichert die Return addresse der Funktion, welche nachfolgend dann in das Program Counter (PC) geladen wird, das angibt, wo das Progamm forsetzt.
+Auch die Funktionsweise des LR Register in Kombination mit dem PC Counter Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
+Denn das LR speichert die Return addresse der Funktion, welche nachfolgend dann in das Program Counter (PC) geladen wird. Der PC gibt an, wo das Programm fortgesetzt wird.
 Erst wenn mehrere Funktionen vorhanden sind, wird die return Adresse auf dem Stack gespeichert und muss von
-diesem wieder geladen werden. Deswegen müssen bei der Überschreibung von Return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
+diesem wieder in das LR geladen werden, welches dann wiederum in den PC geladen wird.
+% TODOO: SCHREIBEN WIESO QUASI 2 FUNKTIONEN BENÖTIGT WERDEN
+Deswegen müssen bei der Überschreibung von return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
 der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
+
 \begin{figure}[ht!]
 \begin{center}
-  \includegraphics[scale=0.28]{figures/arm_register_set_detailled.png}
+  \includegraphics[scale=0.5]{figures/arm_register_set_selfmade.png}
   \caption{ARM Register Set}
   \label{Abbildung 1: ARM Register Set}
 \end{center}
@@ -185,7 +189,7 @@ der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
 %%%%
 
 %%%% LITTLE ENDIAN
-Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
+Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie standardmäßig auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
 % Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeichert:
 % \begin{figure}[ht!]
 %     \begin{center}
@@ -197,7 +201,7 @@ Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie auf Litt
 Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige Rolle, da beim Auslesen des
 Speichers dies zu berücksichtigen ist.
 
-Wie viele Embedded Systems hat auch der STM32 kein Betriebssstem, das weitere Schutzmechanismen bieten würde.
+Wie die meisten Embedded Systems hat auch der STM32 kein Betriebssstem, das weitere Schutzmechanismen bieten würde.
 % Kein OS, das irgendwelche Sdchutzmechanismen bieten würde!!!!
 
 
@@ -373,7 +377,9 @@ int main(){
   // User Input
   scanf("Hello, please first enter your age: ", &age);
   scanf("Enter your username: ", username);
-  // For taking advantage of this vulnerability: 1. enter a number for which adress to read, 2. enter on the correct position %s to interpret the entered number in 1. as pointer
+  // For taking advantage of this vulnerability:
+  // 1. enter a number for which adress to read,
+  // 2. enter on the correct position %s to interpret the entered number in 1. as pointer
   // Output
   printf("Your age is: %d", age);
   printf("Welcome ");
@@ -405,13 +411,15 @@ Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer
 dieser umfasst.
 Die Eingabe überschreitet die Grenzen des Buffers und überschreibt damit andere Daten, die außerhalb des Buffers gespeichert sind.
 Diese Schwachstelle kann in zwei verschiedenen Kontexten auftreten, nämlich in einem Stack- oder in einem Heap Buffer Overflow.
-In diesem Kapitel wird der Fokus auf den Stack Buffer Overflow gelegt, wobei man im Wesentlichen in zwei verschiedenen Angriffsarten unterscheidet.
-Ein Angriff basiert auf der Idee eigenen Code einzufügen und diesen auszuführen, indem der return adresse der Funktion so überschrieben wird, dass die Funktion
+In diesem Kapitel wird der Fokus auf den Stack Buffer Overflow gelegt, wobei man im Wesentlichen zwei verschiedenen Angriffsarten unterscheidet.
+Ein Angriffstyp basiert auf der Idee eigenen Code einzufügen und diesen auszuführen, indem der Rücksprungadresse der Funktion so überschrieben wird, dass die Funktion
 mit eigens eingefügten Code ausgeführt wird. Diese Art von Angriff ist relativ leicht zu verhindern, indem eine \ac{dep} verwendet wird.
 Wie im Kapitel 2 erwähnt, ist hierfür die \ac*{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar markiert.
 
 Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung angebracht, indem die return Adresse mit der Adresse
-dieser gewünschten Funktion überschrieben wird. Dieser Angriffstyp ist als \ac*{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
+dieser gewünschten Funktion überschrieben wird. %% TODO: hier noch schreiben, dass diese vorhandenen Funkt. nicht in SRAM, deswegen bringt DEP/MPU nix?
+Dieser Angriffstyp ist als \ac*{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
+Im folgenden Beispiel wird ein ROP Angriff mit Berücksichtigung der Eigenschaften des STM32 dargestellt.
 % TODO; noch genauer mit %esp beschreiben, evtl mit Bild?
 %% TODO: in IS bsp anschauen!!
 
@@ -420,15 +428,31 @@ dieser gewünschten Funktion überschrieben wird. Dieser Angriffstyp ist als \ac
 
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
-Ausnutzung des ROP Angriffs um andere Funktion aufzurufen
+Ein \ac*{rop} Angriff funktioniert wie in der folgenden Abbildung dargestellt.
+Eine beispielhafte Funktion request\_input() lässt dem User über eine weitere Funktion, scanf(), eine Eingabe tätigen, wobei das zugrundeliegende Speicherobjekt beispielsweise ein C Array ist.
+Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. mehr Daten in das Array gespeichert werden, als dieses umfasst.
+O.B.d.A wird hier ein char Array der Größe 8 gewählt. Bei der Eingabe befindet man sich in der scanf Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
+\"AAAA AAAA AAAA AAAA AAAA 0ROP\"  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
+Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack (d.h. von hohen zu niedrigen Adressen) nur 8 Byte reserviert.
+Nun werden zu den höheren Adressen hin (der Stack wächst ja nach unten bei der Reservierung) weitere Daten überschrieben.
+Bei der vorhandenen ARM Architektur, die sich im STM32 befindet, befindet sich wie eingangs erwähnt ein LR Register, welches die Return Adresse der Scanf Funktion noch hält, da keine weiter Funktion aufgerufen wird.
+Deshalb funktioniert der Rücksprung von der scanf Funktion in die request\_input() Funktion, denn hierbei wird nur das LR Register in den PC geladen.
+Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei die eine in der anderen genestet sein muss.
+
+% Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
+% Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besodners sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
+
 \begin{figure}[ht!]
   \begin{center}
-    \includegraphics[scale=0.28]{figures/BufferOverflow.png}
+    \includegraphics[scale=0.56]{figures/BufferOverflow.png}
     \caption{Buffer Overflow}
     \label{Abbildung 1: Buffer Overflow}
   \end{center}
 \end{figure}
 
+
+
+%% TODO: konkreter machen?? ALSO MIT DEFINIERTE ARRAY GRÖße?
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 % Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
@@ -443,7 +467,7 @@ Ausnutzung des ROP Angriffs um andere Funktion aufzurufen
 Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
 Eine davon, die \ac*{dep} umgesetzt durch die \ac*{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac*{rop} nicht verhindert.
 
-Für diesen Angriffstyp ist
+Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von \ac*{aslr}, Stack Canaries und oder Watchdogs.
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
