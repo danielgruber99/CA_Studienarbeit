@@ -403,7 +403,7 @@ COMPILER BASED COUNTERMEASURES
 %%% 6. Compiler based Countermeasueres
 
 %%%%% BUFFER OVERFLOW (ROP)
-\subsection{Buffer Overflow (ROP)}
+\subsection{Buffer Overflow und \ac{rop}}
 \subsubsection{Beschreibung}
 % https://owasp.org/www-community/attacks/Buffer_overflow_attack
 % https://owasp.org/www-community/vulnerabilities/Buffer_Overflow
@@ -419,7 +419,7 @@ Wie im Kapitel 2 erwähnt, ist hierfür die \ac*{mpu} bei der STM Mikrocontrolle
 Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung angebracht, indem die return Adresse mit der Adresse
 dieser gewünschten Funktion überschrieben wird. %% TODO: hier noch schreiben, dass diese vorhandenen Funkt. nicht in SRAM, deswegen bringt DEP/MPU nix?
 Dieser Angriffstyp ist als \ac*{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
-Im folgenden Beispiel wird ein ROP Angriff mit Berücksichtigung der Eigenschaften des STM32 dargestellt.
+Im folgenden Beispiel wird ein \ac*{rop} Angriff mit Berücksichtigung der Eigenschaften des STM32 dargestellt.
 % TODO; noch genauer mit %esp beschreiben, evtl mit Bild?
 %% TODO: in IS bsp anschauen!!
 
@@ -432,7 +432,7 @@ Ein \ac*{rop} Angriff funktioniert wie in der folgenden Abbildung dargestellt.
 Eine beispielhafte Funktion request\_input() lässt dem User über eine weitere Funktion, scanf(), eine Eingabe tätigen, wobei das zugrundeliegende Speicherobjekt beispielsweise ein C Array ist.
 Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. mehr Daten in das Array gespeichert werden, als dieses umfasst.
 O.B.d.A wird hier ein char Array der Größe 8 gewählt. Bei der Eingabe befindet man sich in der scanf Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
-\"AAAA AAAA AAAA AAAA AAAA 0ROP\"  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
+\textit{AAAA AAAA AAAA AAAA AAAA 0ROP}  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
 Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack (d.h. von hohen zu niedrigen Adressen) nur 8 Byte reserviert.
 Nun werden zu den höheren Adressen hin (der Stack wächst ja nach unten bei der Reservierung) weitere Daten überschrieben.
 Bei der vorhandenen ARM Architektur, die sich im STM32 befindet, befindet sich wie eingangs erwähnt ein LR Register, welches die Return Adresse der Scanf Funktion noch hält, da keine weiter Funktion aufgerufen wird.
@@ -474,7 +474,37 @@ Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Prot
 \newpage
 \section{Besprechung der möglichen Skalierbarkeit}
 % https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
+Die oben genannten Schwachstellen können auch in Infotainmentsystemen von Automobilen ausgenutzt werden mit dem Ziel die Kontrolle über dieses zu erlangen.
+Hier wird inbesondere die Ausnutzung der Format String Vulnerabilty betrachtet und wie diese im konkreten Ausnutzungsfall am Automobil skaliert werden kann.
 
+Mittlerweile hat jeder größere Autombilhersteller seine eigenes Infotainmentsystem bzw. in Kooperation mit Softwareriesen wie Google, Apple, etc. entwickelt, und jedes Neufahrzeug
+bietet dieses auch an. Die Funktionalität der Infotainmentsysteme steigt deutlich an, von Nutzung eines Navigationssystem über Verbindung mit Mobilgeräten und Nutzung von weiteren Apps.
+Insbesondere Schnittstellen nach außen, wie die Bluetooth Kommunikation des Automobils mit einem Smartphone birgt einige Risiken.
+Darunter zählt auch die FOrmat String Vulnerability Schwachstelle. Diese kann man nämlich bei der Verbindung eines Mobilgerätes mit dem Infotainmentsystem über Bluetooth
+ausnuzten, indem der Name des mit sich zu verbindenden Smartphones beispielsweise auf \textit{\%c\%c\%c\%c\%c\%c\%c\%c} geändert wird.
+Wie in der Format String Vulnerability erklärt, führt diese Eingabe bei unsicher programmierten printf statements dazu, dass Register bzw. der Stack ausgelesen werden.
+Dies war hier der Fall, und man konnte Daten auslesen, die von Experten als Karteninformationen identifiziert wurden.
+
+Allein das Auslesen von wichtigen Informationen des Automobils ist eine erhebliche Sicherheitslücke, jedoch kann dies weiter skaliert werden mit der Nutzung von \textit{\%s} oder \textit{\%n}.
+Mit \%n kann insbesondere nprintf() so ausgenutzt werden, dass ein Wert geschrieben wird an die Speicheradresse, die am Stack referenziert wird.
+Der Angreifer kann also eine beliebige Adresse eingeben, dementsprechend \%n ausnutzen, um dan diese eingegebene Adresse einen Wert zu schreiben.
+Falls dies eine ausgesuchte Rücksprungadresse oder irgendeinen Pointer überschreibt kann der Angreifer nun entweder eigens eingegebenen Code ausführen oder bereits bestehende Funktionen
+ähnlich wie bei Buffer Overflow \ac*{rop} Angriff ausführen.
+
+Diese Schwachstelle kann also von einer Informationsgewinnung zur Ausührung  bei geschickter Anwendung von \%n und dementsprechend vorliegenden Schwachstellen führen.
+Bei vorliegender Schwachstelle kann der Anriff also so skaliert werden, dass anstatt nur Informationen ausgelesen werden, eigener Code ausgeührt wird (Remote Code Execution),
+womit prinzipiell die Kontrolle über das Automibil erlangt werden kann. Dies wiedrum kann in verschiedensten Szenarien ausnutzen.
+Da die Steuergeräte (ECUs) im Auto meist untereinander verbunden sind, lässt sich nun auch ein Angriffsszenario vorstellen, bei dem über Remote Code Execution angefangen beim
+Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipuliert werden können.
+
+%some further data from the memory, like a password. But then it gets even worse: if the attacker uses the %n specifier,
+%printf() will not READ, but instead WRITE a value (specifically, the number of characters printed out so far) to the memory address referenced on the stack.
+%automotive security, secure coding in C and C++, format string
+% If the attacker is crafty enough, they can exploit an arbitrary write vulnerability like this to overwrite a return address or any other code pointer,
+% resulting in the CPU executing arbitrary code – so we have gone from a humble information leakage vulnerability to full Remote Code Execution (RCE)!
+% RCE is the ‘holy grail’ of attackers; it is one of the most important concerns when it comes to secure coding, and especially secure coding in C and C++.
+% Of course, these attacks are hard to carry out in practice, and thus they are quite popular in hacker contests (called CTFs).
+% But hackers can be very persistent, especially if exploitation can allow them to – say – steal a high-value vehicle.
 
 % ============================================================================== APPENDIX =========================================================================================================================
 \begin{appendix}
