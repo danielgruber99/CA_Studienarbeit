@@ -439,20 +439,20 @@ Bei der vorhandenen ARM Architektur, die sich im STM32 befindet, befindet sich w
 Deshalb funktioniert der Rücksprung von der scanf Funktion in die request\_input() Funktion, denn hierbei wird nur das LR Register in den PC geladen.
 Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei die eine in der anderen genestet sein muss.
 
+Bei der request\_input() Funktion ist auf dem Stack die return Adresse überschrieben worden, wobei das Überschriebene dann in das LR geladen wird.
+Dies wird daraufhin wieder in den PC geladen, in dem Fall \textit{POR0}. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
+letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
+Der Rücksprung der aufgerufenen Funktion wird i.d.Regel fehlschlagen und das Programm abbrechen, jedoch bleiben die mit der gewünschten aufgerufenen Funktion bestehen.
+Damit ist der ROP Angriff erfolgreich.
 % Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
 % Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besodners sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
-
 \begin{figure}[ht!]
   \begin{center}
-    \includegraphics[scale=0.56]{figures/BufferOverflow.png}
+    \includegraphics[scale=0.56]{figures/BufferOverflow_w_stack.png}
     \caption{Buffer Overflow}
     \label{Abbildung 1: Buffer Overflow}
   \end{center}
 \end{figure}
-
-
-
-%% TODO: konkreter machen?? ALSO MIT DEFINIERTE ARRAY GRÖße?
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 % Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
@@ -467,7 +467,8 @@ Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei d
 Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
 Eine davon, die \ac*{dep} umgesetzt durch die \ac*{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac*{rop} nicht verhindert.
 
-Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von \ac*{aslr}, Stack Canaries und oder Watchdogs.
+Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac*{aslr}, Stack Canaries und bzw. oder Watchdogs.
+
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
