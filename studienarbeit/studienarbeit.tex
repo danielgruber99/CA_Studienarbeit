@@ -126,14 +126,14 @@ verliert man den Vorteil durch den gemeinsamen Adressbereich bzw. Speicherbereic
 Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
 
 Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
-Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können.
+Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können. \cite{MPU}
 % TODO: MPU ausführlich erklären hier!!
 % verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
 % Memmory access attributes ändern
 
 %%%%%% SPEICHERMODELL
-Das Speichermodell bzw. der Adressierungsbereich von möglichen 4GB der CPU ist in der linken Abbildung dargestellt.
-Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in der rechten Abbildung dargestellt sind.
+Das Speichermodell bzw. der Adressierungsbereich von möglichen 4GB der CPU ist in \autoref{fig: Memory map} dargestellt.
+Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in \autoref{fig: Flash und SRAM} dargestellt sind.
 Dabei ist insbesondere wichtig, dass der Stack nach unten, d.h. von höheren zu niedrigen Adressen wächst, was es ermöglicht,
 return Adressen und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen.
 \begin{figure}[ht!]
@@ -159,6 +159,7 @@ diesem wieder in das \ac{lr} geladen werden, welches dann wiederum in den \ac{pc
 Deswegen müssen bei der Überschreibung von return Adressen zwei Funktionen, wobei eine die andere aufruft, um die Überschreibung
 der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
 
+\autoref{fig: ARM Register Set} zeigt die vorhandenen Register im STM32F103C8T6 auf, wobei neben den genannten Registern noch der Stack Pointer und die General Purpose Register zu erwähnen sind.
 \begin{figure}[ht!]
 \begin{center}
   \includegraphics[scale=0.5]{figures/arm_register_set_selfmade.png}
@@ -184,7 +185,7 @@ der returnadresse der äußeren Funktion zu ermöglichen, vorhanden sein.
 %%%%
 
 %%%% LITTLE ENDIAN
-Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie standardmäßig auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse.
+Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie standardmäßig auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse. %\cite irgendein manual
 % Hier wird beispielsweise ein integer ivar=0x01234567 folgendermaßen abgespeichert:
 % \begin{figure}[ht!]
 %     \begin{center}
@@ -194,9 +195,9 @@ Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie standard
 %     \end{center}
 % \end{figure}
 Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige Rolle, da beim Auslesen des
-Speichers dies zu berücksichtigen ist.
+Speichers dies zu berücksichtigen ist. Aber auch bei der Format String Vulnerability muss beim Überschreiben der Adresse auf die Endianness geachtet werden.
 
-Wie die meisten Embedded Systems hat auch der STM32 kein Betriebssstem, das weitere Schutzmechanismen bieten würde.
+Wie viele Embedded Systems haben die Mikrocontroller der STM32 Familie kein Betriebssstem, das weitere Schutzmechanismen oder ähnliche Dienste bieten würde.
 % Kein OS, das irgendwelche Sdchutzmechanismen bieten würde!!!!
 
 
@@ -207,7 +208,7 @@ Wie die meisten Embedded Systems hat auch der STM32 kein Betriebssstem, das weit
 \subsection{memcmp Timing Attacke für Bruteforcing}
 \subsubsection{Beschreibung}
 Die memcmp Timing Attacke ist ein typischer Seitenkanal-Angriff. Diese Art von Angriffen basieren auf Informationen, die von der konkreten Implementierung eines Systems abhängen.
-Bei der memcmp Timing Attacke basiert dies auf dem Wissen über die benötigte Zeit eines Vergleichs von Speicherbereichen, welcher in der Software implementiert ist.
+Bei der memcmp Timing Attacke basiert dies auf dem Wissen über die benötigte Zeit eines Vergleichs von Speicherbereichen, welcher in der Software implementiert ist. \cite{Hardware Hacking Handbook}
 %welche konkret in diesem Fall auf die Softwareimplementierung eines Vergleichs von Speicherbereichen.
 Denn im Fall, dass eine Speichervegleichsfunktion so implementiert ist, dass beim ersten nicht übereinstimmendem verglichenen Zeichen von der Funktion 'false' zurückgegeben wird,
 benötigt der Vergleich unterschiedlich lange, je nach Anzahl richtiger Buchstaben einer Zeichenkette.
@@ -278,7 +279,7 @@ Die erste Schutzmaßnahme zielt auf eine korrelationslose bzw. konstante Zeit be
 von einer falschen Stelle immer alle Stellen überprüft werden und nachfolgend erst das Ergebnis des Vergleichs zurückgegeben wird.
 Hierbei wäre für oben dargestellten Code genau eine Änderung nötig, nämlich die Verwendung einer boolschen Variable,
 die defaultmäßig true ist und bei einem fehlerhaften Vergleich auf false gesetzt wird. Dabei ist zu beachten, dass
-alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zurückgegeben wird.
+alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zurückgegeben wird. Die dafür notwendige Änderung ist in \autoref{fig:memcmpcheckpinimproved}, insbesondere in Zeile 3 dargestellt.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_memcmp_pin_correct_improved_1.png}
@@ -288,12 +289,15 @@ alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zur
 \end{figure}
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
 randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
+
 Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jedem Vergleich
 wird eine andere Position als erste Stelle verglichen.
-Diese bisher vorgestellten Maßnahmen zielen darauf ab, Seitenkanalinformationen zu verfälschen und damit die Nachvollziehbarkeit des Algorithmus zu erschweren.
 
+Eine weitere Schutzmaßnahme ist die Ausführung von Decoy operations (dt. Ablenkungsmanöver), wobei Algorithmen zufällige Berechnungen durchführen.
+Dabei werden beispielsweise manche Werte zufällig öfter verglichen oder die Ergebnisse von zufälligen weiteren Berechnungen nicht verwendet. \cite{Hardware Hacking Handbook Chapter 14}
+% Bild davon einfügen
 
-% TODO: decoy operations,randomisierung
+Alle vorgestellten Maßnahmen zielen darauf ab, Seitenkanalinformationen zu verfälschen und damit die Nachvollziehbarkeit des Algorithmus zu erschweren.
 
 %%%%% FORMAT STRING VULNERABILITY
 \subsection{Format String Vulnerabilty}
@@ -301,10 +305,10 @@ Diese bisher vorgestellten Maßnahmen zielen darauf ab, Seitenkanalinformationen
 Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
 Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz bringen.
 Diese Schwachstelle basiert auf variadische Funktionen, d.h. Funktionen, die eine variable Anzahl an Argumenten akzeptieren.
-Eine von jedem C Programmiere benutzere variadische Funktion ist beipsielsweisedie printf Funktion.
+Eine von jedem C Programmiere benutzere variadische Funktion ist beipsielsweisedie printf Funktion. \cite{OWASP Format String Vuln.}
 Das erste Argument einer printf Funktion ist der sogenannte Format String, der mit den angegebenen Paramtern beginnend mit \%, wie \%s, \%d, \%x usw., besimmt, wie nachfolgende Parameter
 als Argumente verwendet werden.
-Die nachfolgende Abbildung verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
+\autoref{fig: printf - Format String} verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
 Paramtern \%s und \%d als Argumente ersetzt werden.
 % Parameter im Format String beginnen mit %
 \begin{figure}[ht!]
@@ -315,7 +319,7 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
   \end{center}
 \end{figure}
 
-Falls die printf - Funktion unsicher programmiert ist, wie in folgenden Code-Ausschnitt zu sehen,
+Falls die printf - Funktion unsicher programmiert ist, wie in \autoref{fig:formatstringreadbase} zu sehen,
 wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen werden.
 Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriff auf Register bzw. Stack,
 durchgeführt werden.
@@ -341,7 +345,7 @@ und daraufhin \%n ausnutzt um eben an diese Adresse mit der Addresse zum Ausfüh
 \subsubsection{Beispiel}
 Folgendes Beispiel konzentriert sich auf die beispielshafte Anwendung der Format String Vulnerabilty in Bezug auf das Auslesen von Speicher.
 %Konkret soll hier der RAM ausgelesen werden, in welchen sich das Passwort nach erstmaligen Vergleich geladen wurde.
-Der folgende Code zeigt ein Beispielprogramm, dass eine printf Implementierung mit oben beschriebener Schwachstelle aufweist.
+Der Codeausschnitt in \autoref{fig:formatstringwriteextended} zeigt ein Programm, dass eine printf Implementierung mit oben beschriebener Schwachstelle aufweist.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_formatstring_extended.png}
@@ -359,9 +363,9 @@ Hiermit kann man beispielsweise nun den RAM, den Flash oder andere Speicherberei
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schutzmaßnahme, nämlich
-das sichere Programmieren, indem man die Paramter \%s, \%d, ... korrekt benutzt.
+das sichere Programmieren, indem man die Paramter \%s, \%d oder weitere korrekt benutzt.
 Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
-derartige möglicherweise schädliche Eingaben nicht zuzulassen.
+derartige möglicherweise schadhafte Eingaben nicht zuzulassen.
 
 Des Weiteren gibt es Schutmaßnahmen, die in den Compilern implementiert sind, sodass die Compiler mindestens eine Warnung oder sogar einen Fehler
 bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit printf anzeigen.
@@ -370,13 +374,13 @@ bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit prin
 \subsection{Buffer Overflow und ROP}
 \subsubsection{Beschreibung}
 Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer, beispielsweise ein Array in der Programmiersprache C, versucht zu speichern, als
-dieser umfasst.
+dieser umfasst. \cite{OWASP Buffer Overflow}
 Die Eingabe überschreitet die Grenzen des Buffers und überschreibt damit andere Daten, die außerhalb des Buffers gespeichert sind.
 Diese Schwachstelle kann in zwei verschiedenen Kontexten auftreten, nämlich in einem Stack- oder in einem Heap Buffer Overflow.
 In diesem Kapitel wird der Fokus auf den Stack Buffer Overflow gelegt, wobei man im Wesentlichen zwei verschiedenen Angriffsarten unterscheidet.
 Ein Angriffstyp basiert auf der Idee eigenen Code einzufügen und diesen auszuführen, indem der Rücksprungadresse der Funktion so überschrieben wird, dass die Funktion
-mit eigens eingefügten Code ausgeführt wird. Diese Art von Angriff ist relativ leicht zu verhindern, indem eine \ac{dep} verwendet wird.
-Wie im Kapitel 2 erwähnt, ist hierfür die \ac{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar markiert.
+mit eigens eingefügten Code ausgeführt wird. Diese Art von Angriff ist relativ leicht zu verhindern, indem eine \ac{dep} verwendet wird. \cite{IEEE Xplore ROP}
+Wie in Kapitel 2 erwähnt, ist hierfür die \ac{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar markiert.
 
 Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung angebracht, indem die return Adresse mit der Adresse
 dieser gewünschten Funktion überschrieben wird. %% TODO: hier noch schreiben, dass diese vorhandenen Funkt. nicht in SRAM, deswegen bringt DEP/MPU nix?
@@ -385,7 +389,7 @@ Im folgenden Beispiel wird ein \ac{rop} Angriff mit Berücksichtigung der Eigens
 
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
-Ein \ac{rop} Angriff funktioniert wie in der folgenden Abbildung dargestellt.
+Ein \ac{rop} Angriff funktioniert wie in \autoref{fig: Buffer Overflow} dargestellt.
 Eine beispielhafte Funktion request\_input() lässt dem User über eine weitere Funktion, scanf(), eine Eingabe tätigen, wobei das zugrundeliegende Speicherobjekt beispielsweise ein C Array ist.
 Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. mehr Daten in das Array gespeichert werden, als dieses umfasst.
 O.B.d.A wird hier ein char Array der Größe 8 gewählt. Bei der Eingabe befindet man sich in der scanf Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
@@ -400,7 +404,7 @@ Bei der request\_input() Funktion ist auf dem Stack die return Adresse überschr
 Dies wird daraufhin wieder in den \ac{pc} geladen, in dem Fall \textit{POR0}. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
 letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
 Der Rücksprung der aufgerufenen Funktion wird i.d.Regel fehlschlagen und das Programm abbrechen, jedoch bleiben die mit der gewünschten aufgerufenen Funktion bestehen.
-Damit ist der ROP Angriff erfolgreich.
+Damit ist der ROP Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
 % Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
 % Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besodners sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
 \begin{figure}[ht!]
@@ -425,7 +429,8 @@ Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in de
 Eine davon, die \ac{dep} umgesetzt durch die \ac{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac{rop} nicht verhindert.
 
 Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries und bzw. oder Watchdogs.
-
+Die Idee hinter Protection Rings ist, dass jeder Prozess 
+TODO: PROTECTION RINGS, STACK CANARIES, WATCHDOGS
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
@@ -475,6 +480,8 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 %% add citations with "\cite{source name}"
 \begin{thebibliography}{99}
 \bibitem{Hardware Hacking Handbook} Colin O'Flynn and Jasper van Woudenberg: \textit{The Hardware Hacking Handbook}, No Starch Press, 21 Dec. 2021.
+\bibitem{Hardware Hacking Handbook Chapter 14} Colin O'Flynn and Jasper van Woudenberg: \textit{Chapter 14: Think of the Children: Countermeasures, Certifications and Goodbytes}, n.d.. Zuletzt aufgerufen am 09.07.2022. [Online]. https://github.com/HardwareHackingHandbook/notebooks/blob/main/labs/HHH\_14\_Think\_of\_the\_Children\_Countermeasures\_Certifications\_and\_Goodbytes.ipynb
+
 \bibitem{car format string vuln.} Automotive Security, \textit{Automotive Security}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. \\https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/ % Für Besprechung der möglichen Skalierbarkeit automotive security (Einleitung und letztes Kapitel)
 \bibitem{IEEE Xplore ROP} Prandini Marco und Ramilli Marco: \textit{Return-Orientated Programming}. 10. Dez, 2012. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://ieeexplore.ieee.org/document/6375725
 \bibitem{McKinsey}  Ondrej Burkacky: \textit{Automotive software and electronics 2030}. 2017. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.mckinsey.com/~/media/mckinsey/industries/automotive\%20and\%20assembly/our\%20insights/mapping\%20the\%20automotive\%20software\%20and\%20electronics\%20landscape\%20through\%202030/automotive-software-and-electronics-2030-final.pdf
@@ -489,12 +496,10 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 
 
 % DATASHEETS
-%\bibitem{STM Data Sheet} STM32 Data Sheet, \textit{STM32 Data Sheet}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-%\bibitem{STM MPU} STM32 Memory Protection Unit, \textit{STM32 Memory Protection Unit}. n.d.. Zuletzt aufgerufen am: 25.06.2022. [Online]. https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-% DataSheeet von STM32F103C8: file:///C:/Users/danie/Downloads/stm32f103c8.pdf
-% MPU:  https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-% memory model: https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-
+\bibitem{MPU}  STM: \textit{Managing memory protection unit in STM32 MCUs}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/resource/en/application\_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
+%https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
+\bibitem{STM32F103Cx DataSheets}  STM: \textit{STM32F103Cx8 u STM32F103xB DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/content/ccc/resource/technical/document/datasheet/33/d4/6f/1d/df/0b/4c/6d/CD00161566.pdf/files/CD00161566.pdf/jcr:content/translations/en.CD00161566.pdf
+\bibitem{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}  STM: \textit{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/resource/en/programming\_manual/pm0056-stm32f10xxx20xxx21xxxl1xxxx-cortexm3-programming-manual-stmicroelectronics.pdf
 
 % CA QUELLEN
 % IS Foliensatz: IS-03-Schwachstellen-2.pdf(für Buffer Overflow)
@@ -502,7 +507,9 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 % CA FOliensatz 02 Speicherverwaltung: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/02_Speicherverwaltung.pdf (für Format String VUln und Buffer Overflow)
 % CA Foliensatz 03 Seitenkanäle: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/03_Seitenkana%CC%88le.pdf (für memcmp timing attack)
 \bibitem{ARM Modell Overview}  Bruce Hemingway: \textit{ARM Overview}. 2017. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://courses.cs.washington.edu/courses/cse474/17wi/pdfs/lectures/03-arm\_overview.pdf (ARM)
-\bibitem{ARM Modell Overview}  Code Arcana: \textit{ARM Overview}. 02. Mai 2013. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://codearcana.com/posts/2013/05/02/introduction-to-format-string-exploits.html (FORMAT String)
+\bibitem{Format String Exploits}  Code Arcana: \textit{Introduction to format string exploits}. 02. Mai 2013. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://codearcana.com/posts/2013/05/02/introduction-to-format-string-exploits.html (FORMAT String)
+% https://www.semanticscholar.org/paper/Architecture-Support-for-Defending-Against-Buffer-Xu-Kalbarczyk/743a19a7d832fc15a346329a0799d8988d4e7d8c?p2df
+
 
 \end{thebibliography}
 
