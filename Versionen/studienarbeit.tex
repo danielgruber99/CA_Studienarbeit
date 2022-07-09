@@ -80,7 +80,6 @@ Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Be
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
 sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
 Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff, Buffer Overflows und Format String Vulnerabilities.
-
 In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
 Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
 Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format String Vulnerabilty auf das Infotainmentsystem eines Fahrzeuges aufgegriffen und besprochen.
@@ -234,13 +233,17 @@ Der Einfachheit halber wird ein PIN Vergleich der begrenzten Länge 4 durchgefü
 Dies gilt ohne Einschränkung der Allgemeinheit und kann beliebig in der Länge sowie der Mächtigkeit des Alphabets verändert werden.
 Zudem wird die Annahme getroffen, dass der Pin Vergleich erst nach vollständiger Pineingabe erfolgt. Dabei
 wird folgender Code Ausschnitt für die Überprüfung des PINs verwendet.
-\begin{figure}[ht!]
-  \begin{center}
-    \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_memcmp_pin_correct_base.png}
-    \caption{memcmp Timing Attacke - Methode zur Überprüfung eines Pins}
-    \label{fig:memcmpcheckpinbase}
-  \end{center}
-\end{figure}
+\begin{minted}[linenos]{c}
+bool pin_correct(char *input){
+  char *correct_pin = "1337";
+  for (int i = 0; i < 4; i++){
+    if (input[i] != correct_pin[i]){
+      return false;
+    }
+  }
+  return true;
+}
+\end{minted}
 
 Für reines Raten, d.h. Bruteforcing ohne weitere Kenntnisse, sind $ 10*10*10*10 = 10^4 $ Kombinationen möglich.
 Um die Anzahl der Kombinationen deutlich zu reduzieren, kann man den Vorteil des Wissens über die obige Funktion nutzen und damit
@@ -252,7 +255,7 @@ Denn wenn die Stelle richtig ist, war der Vergleich richtig und die Funktion wir
 einhergeht.
 Konkret für die erste Stelle werden also alle Möglichkeiten durchgetestet von \textit{0000, 1000, 2000 bis 9000}, wobei für jeder dieser Eingaben
 eine Zeitmessung durchgeführt wird.
-Für die erste Eingabestelle stellt \autoref{fig: Timing Attack} oben dar, wie sich die Vergleichszeit im
+Folgende zwei Abbildungen stellen für die erste Eingabestelle dar, wie sich die Vergleichszeit im
 korrekten Fall ($t_correct$) zum Fehlerfall ($t_bad$) unterscheidet.
 Da der korrekte Pin 1337 ist, wird für die Eingabe 1000 die Vergleichszeit länger dauern, wie in $t_correct$ dargestellt.
 Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
@@ -279,13 +282,18 @@ von einer falschen Stelle immer alle Stellen überprüft werden und nachfolgend 
 Hierbei wäre für oben dargestellten Code genau eine Änderung nötig, nämlich die Verwendung einer boolschen Variable,
 die defaultmäßig true ist und bei einem fehlerhaften Vergleich auf false gesetzt wird. Dabei ist zu beachten, dass
 alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zurückgegeben wird.
-\begin{figure}[ht!]
-  \begin{center}
-    \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_memcmp_pin_correct_improved_1.png}
-    \caption{memcmp Timing Attacke - verbesserte Methode zur Überprüfung eines Pins}
-    \label{fig:memcmpcheckpinimproved}
-  \end{center}
-\end{figure}
+\begin{minted}[linenos]{c}
+  bool pin_correct(char *input){
+    char *correct_pin = "1337";
+    bool test = true;
+    for (int i = 0; i < 4; i++){
+      if (input[i] != correct_pin[i]){
+        test = false;
+      }
+    }
+    return test;
+  }
+\end{minted}
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch hinzufügen von
 randomisierten sleeps implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
 Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jedem Vergleich
@@ -309,7 +317,7 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
 % Parameter im Format String beginnen mit %
 \begin{figure}[ht!]
   \begin{center}
-    \includegraphics[scale=0.5]{figures/format_string_vulnerability_format_string.png}
+    \includegraphics[scale=0.28]{figures/format_string_vulnerability_format_string.png}
     \caption{printf - Format String}
     \label{fig: printf - Format String}
   \end{center}
@@ -319,13 +327,13 @@ Falls die printf - Funktion unsicher programmiert ist, wie in folgenden Code-Aus
 wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen werden.
 Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriff auf Register bzw. Stack,
 durchgeführt werden.
-\begin{figure}[ht!]
-  \begin{center}
-    \includegraphics[scale=0.7]{figures/CodeSnippets/CodeSnippet_formatstring_base.png}
-    \caption{Format String Read Vulnerability - Beispiel}
-    \label{fig:formatstringreadbase}
-  \end{center}
-\end{figure}
+\begin{minted}{c}
+int main(){
+  char *input;
+  scanf("Enter any input", input);  // Input vom User z.B.: %x%x%x%x
+  printf(input);
+}
+\end{minted}
 Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
 Dazu können beipsielsweise Passwörter zählen, die im Speicher abgespeichtert sind.
 
@@ -342,13 +350,24 @@ und daraufhin \%n ausnutzt um eben an diese Adresse mit der Addresse zum Ausfüh
 Folgendes Beispiel konzentriert sich auf die beispielshafte Anwendung der Format String Vulnerabilty in Bezug auf das Auslesen von Speicher.
 %Konkret soll hier der RAM ausgelesen werden, in welchen sich das Passwort nach erstmaligen Vergleich geladen wurde.
 Der folgende Code zeigt ein Beispielprogramm, dass eine printf Implementierung mit oben beschriebener Schwachstelle aufweist.
-\begin{figure}[ht!]
-  \begin{center}
-    \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_formatstring_extended.png}
-    \caption{Format String Write Vulnerability - Beispiel}
-    \label{fig:formatstringwriteextended}
-  \end{center}
-\end{figure}
+\begin{minted}[linenos]{c}
+int main(){
+  char* correct_password = "f0rm4tS7r!ng";
+  char* username;
+  int age;
+  // User Input
+  scanf("Hello, please first enter your age: ", &age);
+  scanf("Enter your username: ", username);
+  // For taking advantage of this vulnerability:
+  // 1. enter a number for which adress to read,
+  // 2. enter on the correct position %s to interpret
+  //    entered number in 1. as pointer
+  // Output
+  printf("Your age is: %d", age);
+  printf("Welcome ");
+  printf(username); // FORMAT STRING Vulnerability
+}
+\end{minted}
 Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschten Benutzernamen.
 Letztere Eingabe weist die entsprechende Format String Schwachstelle auf.
 Hierbei kann der Nutzer bzw. der Angreifer dies ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auslzusende Speicherzelle dient.
