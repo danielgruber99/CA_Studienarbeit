@@ -64,6 +64,7 @@ acronym=totocnumbered
   \acro{dep}[DEP]{Data Execution Prevention}
   \acro{ecu}[ECU]{Electronic Control Unit}
   \acro{lr}[LR]{Linking Register}
+  \acro{mmu}[MMU]{Memory Management Unit}
   \acro{mpu}[MPU]{Memory Protection Unit}
   \acro{pc}[PC]{Program Counter}
   \acro{risc}[RISC]{Reduced Instruction Set Computer}
@@ -125,8 +126,12 @@ Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges L
 verliert man den Vorteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in  der Neumann Archiktur, dass der Programmcode manipuliert werden kann.
 Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
 
-Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
-Diese ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können. \cite{MPU}
+Manche Architekturen bieten des Weiteren an, die Ausführung von Daten zu verhindern, indem eine Hardware unterstützte \ac{mmu} oder \ac{mpu} entsprechend konfiguriert wird.
+Die \ac{mmu} meist noch mehr Funktionen als die \ac{mpu}, welche sich nur auf Speicherschutz konzentriert.
+Da die STM32 Mikrocontroller Familie wenndann nur eine \ac{mpu} besitzt, wie z.B. der STM32F303, wird hier nur darauf eingegangen.
+Die \ac{mpu} ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können
+und damit bestimmte Schwachstellen nicht mehr ausgenutzt werden können. \cite{MPU}
+%Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
 % TODO: MPU ausführlich erklären hier!!
 % verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
 % Memmory access attributes ändern
@@ -428,9 +433,20 @@ Damit ist der ROP Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer
 Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
 Eine davon, die \ac{dep} umgesetzt durch die \ac{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac{rop} nicht verhindert.
 
-Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries und bzw. oder Watchdogs.
-Die Idee hinter Protection Rings ist, dass jeder Prozess
-TODO: PROTECTION RINGS, STACK CANARIES, WATCHDOGS
+Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries, \ac{aslr} oder Watchdogs.
+
+Das Protection Rings Modell, welches von der Hardware unterstützt werden muss, dient der Trennung von Privilegien, mit denen verschiedene Prozesse laufen.
+Die grundlegende Idee hinter diesem Modell ist, dass Prozesse nach dem Need-to-Know Prinzip nur mit den benötigten Rechten ausgeführt werden.
+Dabei werden in diesem Modell die Ausführungsrechte bzw. -privilegien
+als eine Menge von Ringen beschrieben, wobei diese hierarchisch von innen nach außen nummeriert werden.
+Der innere Ring, Ring 0, bietet alle Rechte und Privilegien, während weiter außen liegende Ringe nur einen Teil der Privilegien des nächstinneren Ringes zur Verfügung stellen.
+Üblicherweise wird dieses Modell so verwendet, dass das System mit den höchsten Privilegien gestartet und initalisiert wird, während Benutzer- und Applikationsprozesse mit niedrigerem Privilegien
+laufen. Damit kann man erreichen, dass Applikationen mit Format String Schwachstelle nur noch soweit ausgenutzt werden, was die Privilegien, mit denen diese Applikation läuft, auszunutzen.
+In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert oder zumindest dessen schadhafte Auswirkungen reduziert.
+
+
+%%% MMU VS MPU überarbeiten, STM32f103 hat keine MPU oder MMU, STM32F303 z.B. schon
+
 
 % ============================================================================== Kapitel 4: Besprechung der möglichen Skalierbarkeit ==============================================================================
 \newpage
