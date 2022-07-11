@@ -431,9 +431,10 @@ Damit ist der ROP Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer
 % 4. Stack Canaries
 % 5. Watchdogs
 Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
-Eine davon, die \ac{dep} umgesetzt durch die \ac{mpu}, ist bereits oben erwähnt, welche den Nachteil hat, dass diese den zweiten Angriffstyp \ac{rop} nicht verhindert.
+Eine davon, die \ac{dep} umgesetzt durch die \ac{mpu}, bereits in \autoref{sec:VorstellungwichtigerRahmenbedinungen} ausführlich erklärt, deklariert Speicherbereiche im SRAM bzw. Stack als nicht ausführbar
+und verhindert damit den ersten Angriffstyp. Jedoch wird der zweite ANgriffstyp \ac{rop} nicht verhindert, da dieser auf bereits existierende Funktionen zugreift, die nicht im Stack liegen.
 
-Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries, \ac{aslr} oder Watchdogs.
+Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries oder Watchdogs.
 
 Das Protection Rings Modell, welches von der Hardware unterstützt werden muss, dient der Trennung von Privilegien, mit denen verschiedene Prozesse laufen.
 Die grundlegende Idee hinter diesem Modell ist, dass Prozesse nach dem Need-to-Know Prinzip nur mit den benötigten Rechten ausgeführt werden.
@@ -444,6 +445,25 @@ Der innere Ring, Ring 0, bietet alle Rechte und Privilegien, während weiter au�
 laufen. Damit kann man erreichen, dass Applikationen mit Format String Schwachstelle nur noch soweit ausgenutzt werden, was die Privilegien, mit denen diese Applikation läuft, auszunutzen.
 In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert oder zumindest dessen schadhafte Auswirkungen reduziert.
 
+Eine weitere Möglichkeit \ac{rop} Angriffe zu verhindern, ist die Verwendung der \ac{aslr}, indem die Adressbereiche des Stacks, des Heaps und mögliche verlinkte Bibliotheken eines Programms unvorhersehbar und zufällig verteilt werden.
+Da bei Angriffen es oft wichtig ist, die exakten Speicheradressen herauszufinden, ist diese Methode sehr effektiv, um die Ausnutzung von Schwachstellen durch gezieltes Springen zu einen Programm deutlich zu erschweren.
+Eine detailliertere Umsetzung basiert beispielsweise darauf, nach definierten Zeitintervallen die Adressbereiche neu zu vergeben.
+Eine weitere Möglichkeit sind die Position-independen executables (PIE) . . .
+%Damit kann ein Angreifer nicht gezielt zu Programmen springen, was die Ausnutzung von Schwachstellen erheblich erschwert.
+% Fix #4.1: Position-independent executables (PIE)
+% • Ein Programm kann beim kompilieren so gebaut werden, dass es nur relative
+% Adressen zum PC benutzt (keine konstanten Adressen).
+% • Das resultierende Executable wird PIE genannt und kann an einer zufälligen
+% Adresse gespeichert und ausgeführt werden
+% • In PIEs können statischer Code, Bibliotheken und Variablen zusätzlich durch
+% zufällige Adressen geschützt werden um mehr Schutz gegen ROP zu bieten.
+
+Des Weiteren gibt es eine Compiler basierte Lösung, nämlich beispielsweise StackGuard, indem ein Sicherheitsmechanismus im Compiler eingebaut ist, der korrupte Return Adressen verhindert.
+Dabei wird ein ein "Stack Canary" - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem Genera Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
+gespeichert wird. Beim Abbauen der Funktion und damit implizit des Stacks wird beim Rücksprung der Stack Canary auf dem Stack mit der Kopie verglichen, um festzustellen, ob eine Buffer Overflow aufgetreten ist.
+% The application randomly generates the 32-bit or 64-bit canary values, so the application can detect improper modification of a canary value resulting from a buffer overflow with high probability. However, there exist attacks that can circumvent StackGuard's canaries to successfully corrupt return addresses and defeat the security of the system
+
+Watchdogs
 
 %%% MMU VS MPU überarbeiten, STM32f103 hat keine MPU oder MMU, STM32F303 z.B. schon
 
@@ -506,6 +526,8 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 \bibitem{McKinsey}  Ondrej Burkacky: \textit{Automotive software and electronics 2030}. 2017. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.mckinsey.com/~/media/mckinsey/industries/automotive\%20and\%20assembly/our\%20insights/mapping\%20the\%20automotive\%20software\%20and\%20electronics\%20landscape\%20through\%202030/automotive-software-and-electronics-2030-final.pdf
 %Ondrej Burkacky, Munich Johannes Deichmann, Stuttgart Jan Paul Stein, Munich
 %https://www.mckinsey.com/~/media/mckinsey/industries/automotive%20and%20assembly/our%20insights/mapping%20the%20automotive%20software%20and%20electronics%20landscape%20through%202030/automotive-software-and-electronics-2030-final.pdf
+\bibitem{IEE buffer overflow stackguard} J.P. McGregor, D.K. Karig, R.B. Lee: \textit{A processor architecture defense against buffer overflow attacks}, 8. März 2004. Zuletzt aufgerufen am: 11.07.2022. [Online]. https://ieeexplore.ieee.org/document/1270612
+
 
 
 % OWASP
