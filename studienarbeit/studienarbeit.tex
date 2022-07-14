@@ -76,7 +76,7 @@ acronym=totocnumbered
 \section{Einleitung}
 \label{sec:Einleitung}
 Embedded Systems befinden sich bereits in vielen Gegenständen und Geräten unseres täglichen Lebens, auch im Auto.
-Die Vernetzung im Fahrzeug und damit auch die Anzahl von Mikrocontroller nehmen im aktuellen Jahrzehnt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
+Die Vernetzung im Fahrzeug und damit auch die Anzahl von Mikrocontrollern nehmen im aktuellen Jahrzehnt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
 Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
 sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
@@ -97,7 +97,7 @@ Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format S
 %STM32F103C8T6	32Bit MCU, ARM CORTEX M3, Flash 64KB, RAM 20KB, IO 37, A/D 10x12b, 72MHz, LQFP48
 %Die Cortex-M3-Architektur kann somit als Nachfolger für den ARM7 betrachtet werden und stellt mehr Rechenleistung als ein ARM7 bei geringerer Komplexität des Programmiermodells sowie geringerer Chipfläche zur Verfügung. Andere Untergruppen, wie z. B. der M1, sind z. B. für die Implementierung auf einem FPGA verfügbar.
 
-Die STM32 Mikrocontroller-Familie werden vom europäischen Halbleiterhersteller STMicroelectronics N.V. produziert, welche als eine der ersten Hersteller
+Die STM32 Mikrocontroller-Familie wird vom europäischen Halbleiterhersteller STMicroelectronics N.V. produziert, welche als eine der ersten Hersteller
 die CORTEX M3 Lizenz von der Firma ARM erworben hat.
 Die STM32 Controllerfamilie zeichnet sich durch einen 32-Bit ARM Cortex-M0/M3/M4 CPU aus, die speziell für Mikrocontroller neu entwickelt wurde.
 ARM ist ein \ac{risc}, welche den Vorteil von insbesondere einen kompakten Befehlssatz sowie vielen Registern hat.
@@ -109,11 +109,11 @@ ARM ist ein \ac{risc}, welche den Vorteil von insbesondere einen kompakten Befeh
 % - For non-leaf functions, LR will have to be stacked
 % TODO: überdenken, ob HARVARD architektur noch genauer beschreiben
 Der Cortex M0/M3/M4 Prozessor, insbesondere der Cortex M3 Prozessor wie beim STM32F103C8T6 vorhanden, basiert grundlegend auf der Harvard Architektur.
-Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welches ermöglicht, zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
-Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speicher (Flash) liegen und
+Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welche es ermöglichen, zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
+Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speichermedium, dem Flash, liegen und
 somit der Adressraum dementsprechend linear programmiert werden kann.
 Grundsätzlich wird dies in der Literatur als Modifizierte Harvard Architektur bezeichnet, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
-Zudem ist hier kein getrennter physikalischer Speicher für Daten und Befehle vorhanden, denn beides befindet sich im Flash, worauf sowohl der Datenbus (DBUS) und Befehlsbus (IBUS) zugreift, wie auf
+Insbesondere ist kein getrennter physikalischer Speicher für Daten und Befehle vorhanden, denn beides befindet sich im Flash, worauf sowohl der Datenbus (DBUS) und Befehlsbus (IBUS) zugreift, wie auf
 nachfolgender Abbildung zu sehen.
 \begin{figure}[ht!]
   \begin{center}
@@ -123,8 +123,7 @@ nachfolgender Abbildung zu sehen.
   \end{center}
 \end{figure}
 Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
-verliert man den Vorteil durch den gemeinsamen Adressbereich bzw. Speicherbereich wie in  der Neumann Archiktur, dass der Programmcode manipuliert werden kann.
-Dies ist insbesondere bei der Schwachstelle Buffer Overflow bzw. Return Orientated Programming von Bedeutung.
+verliert man die Eigenschaft des pyhsikalisch getrennten Adress- bzw. Speicherbereichs. Hier wird wie in der Von-Neumann Archiktur Daten und Befehle auf dem gleichen Speichermedium abgespeichert, welche durch verschiedene Adressbereiche getrennt sind. Da dies aber keine getrennten physikalischen Speicherbereiche sind, können beispielsweise Schwachstellen wie Buffer Overflows und Return Orientated Programming ausgenutzt werden, um mit eigenen Daten den Programmfluss bzw. Befehle zu modifizieren.
 
 Manche Architekturen bieten des Weiteren an, die Ausführung von Daten zu verhindern, indem eine Hardware unterstützte \ac{mmu} oder \ac{mpu} entsprechend konfiguriert wird.
 Die \ac{mmu} meist noch mehr Funktionen als die \ac{mpu}, welche sich nur auf Speicherschutz konzentriert.
