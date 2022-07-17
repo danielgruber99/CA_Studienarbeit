@@ -428,7 +428,7 @@ Eine weitere Möglichkeit sind die Position-independen executables (PIE) . . .
 % • In PIEs können statischer Code, Bibliotheken und Variablen zusätzlich durch
 % zufällige Adressen geschützt werden um mehr Schutz gegen ROP zu bieten.
 
-Des Weiteren gibt es eine Compiler basierte Lösung, nämlich beispielsweise StackGuard, indem ein Sicherheitsmechanismus im Compiler eingebaut ist, der korrupte bzw. modifizierte Rücksprungadressen überprüft und damit zumindest den Sprung dorthin verhindert.
+Des Weiteren gibt es eine Compiler basierte Lösung, nämlich unter anderem StackGuard, bei der ein Sicherheitsmechanismus im Compiler eingebaut ist, der korrupte bzw. modifizierte Rücksprungadressen überprüft und damit zumindest den Sprung dorthin verhindert.
 Dabei wird ein ein "Stack Canary" - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem Genera Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
 gespeichert wird. Beim Abbauen der Funktion und damit implizit des Stacks wird beim Rücksprung der Stack Canary auf dem Stack mit der Kopie verglichen, um festzustellen, ob eine Buffer Overflow aufgetreten ist.
 Eine ähnliche, sogar verbesserte Version, bietet der Stackshield unter Linux. Dieser bietet eine Speicherung der Rücksprungadresse an einem weiteren Platz, welche als letzte Operation vor Beenden der Funktion
@@ -439,8 +439,8 @@ Eine weitere Schutzmaßnahme sind Watchdogs, die wiederum in Software- und Hardw
 falls ein solcher auftritt. Bei Software Watchdogs werden vom Programm periodische Nachrichten gesendet, um den Timer zurückzusetzen, bei Hardware Watchdogs geschieht dies ähnlich, wobei dieser als physikalische Hardware
 mit dem Prozessor verbunden ist. Sollten also in einem Programm Schwachstellen ausgenutzt werden, können die Watchdogs aufgrund nicht zurückgesetzten Timer, den Prozessor neustarten und damit die Ausnutzung vorerst verhindern.
 
-Zusammengefasst gibt es eine umfassende Menge von Schutzmaßnahmen, von denen hier einige dargestellt wurden. Anzumerken ist jedoch, dass diese Schutzmaßnahmen oft verhindern, dass schadhafter Code
-ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit kann also die Verfügbarkeit des Systems beeinträcht werden, der in der englischen Literatur auch als Denial of Service (DOS) bekannt ist.
+Zusammengefasst gibt es eine umfassende Menge von Schutzmaßnahmen, von denen hier einige dargestellt wurden. Anzumerken ist jedoch, dass diese Schutzmaßnahmen oft nur verhindern, dass schadhafter Code
+ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit kann also die Verfügbarkeit des Systems beeinträchtigt werden, was in der englischen Literatur auch als Denial of Service (DOS) bekannt ist.
 %%% MMU VS MPU überarbeiten, STM32f103 hat keine MPU oder MMU, STM32F303 z.B. schon
 
 
@@ -448,28 +448,28 @@ ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit k
 \newpage
 \section{Besprechung der möglichen Skalierbarkeit}
 % https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
-Die oben genannten Schwachstellen können auch in Infotainmentsystemen von Automobilen ausgenutzt werden mit dem Ziel die Kontrolle über dieses zu erlangen.
-Im Folgenden wird inbesondere die Ausnutzung der Format String Vulnerabilty im Infotainmentssystems eines Automobils betrachtet und des weiteren auf mögliche Skalierungen eingegangen.
+Die oben genannten Schwachstellen können auch in Infotainmentsystemen von Automobilen ausgenutzt werden mit dem Ziel, die Kontrolle über dieses zu erlangen.
+Im Folgenden wird inbesondere die Ausnutzung der Format String Vulnerabilty im Infotainmentssystems eines Automobils betrachtet und des Weiteren auf mögliche Skalierungen eingegangen.
 
-Mittlerweile hat jeder größere Autombilhersteller sein eigenes Infotainmentsystem bzw. in Kooperation mit Softwareriesen wie Google, Apple, etc. entwickelt, und jedes Neufahrzeug
-bietet dieses auch an. Die Funktionalität der Infotainmentsysteme steigt deutlich an, von Nutzung eines Navigationssystem über die Verbindung mit Mobilgeräten und Nutzung von weiteren Apps.
+Mittlerweile entwickelt jeder größere Automobilhersteller sein eigenes Infotainmentsystem bzw. in Kooperation mit Softwareriesen wie Google, Apple, etc..
+Die Funktionalität der Infotainmentsysteme steigt zunehmend an, von Nutzung eines Navigationssystem über die Verbindung mit Mobilgeräten und Nutzung von weiteren Apps.
 Insbesondere Schnittstellen nach außen, wie die Bluetooth Kommunikation des Automobils mit einem Smartphone birgt einige Risiken.
 Darunter zählt auch die Format String Vulnerability Schwachstelle. Diese konnte nämlich bei der Verbindung eines Mobilgerätes mit dem Infotainmentsystem über Bluetooth
 ausgenutzt werden, indem der Name des mit sich zu verbindenden Smartphones beispielsweise auf \textit{\%c\%c\%c\%c\%c\%c\%c\%c} geändert wird.
-Wie in der Format String Vulnerability erklärt, führt diese Eingabe bei unsicher programmierten \textit{printf} statements dazu, dass Register bzw. der Stack ausgelesen werden.
-Dies war in älteren Versionen des Infotainmentsystems möglich, und man konnte Daten auslesen, die von Experten als Karten- und Navigationinformationen identifiziert worden sind.
+Wie in der Format String Vulnerability erklärt, führt diese Eingabe bei unsicher programmierten \textit{printf} Statements dazu, dass Register bzw. der Stack ausgelesen werden.
+Dies war in früheren Versionen des Infotainmentsystems möglich, und Daten, die von Experten als Karten- und Navigationinformationen identifiziert worden sind, konnten ausgelesen werden.
 
 Allein das Auslesen von wichtigen Informationen des Automobils ist eine erhebliche Sicherheitslücke, jedoch kann dies weiter skaliert werden mit der Nutzung von \textit{\%s} oder \textit{\%n}.
-Mit \textit{\%n} kann insbesondere \textit{nprintf()} so ausgenutzt werden, dass ein Wert geschrieben wird an die Speicheradresse, die am Stack referenziert wird.
-Der Angreifer kann also eine beliebige Adresse eingeben, dementsprechend \textit{\%n} ausnutzen, um dan diese eingegebene Adresse einen Wert zu schreiben.
-Falls dies eine ausgesuchte Rücksprungadresse oder irgendeinen Pointer überschreibt kann der Angreifer nun entweder eigens eingegebenen Code ausführen oder bereits bestehende Funktionen
-ähnlich wie bei Buffer Overflow \ac{rop} Angriff ausführen.
+Mit \textit{\%n} kann insbesondere \textit{nprintf()} in folgender Art und Weise ausgenutzt werden, dass ein Wert an die Speicheradresse geschrieben wird, die am Stack referenziert wird.
+Der Angreifer kann also eine beliebige Adresse eingeben, dementsprechend \textit{\%n} ausnutzen, um dann an vorher eingegebene Adresse einen Wert zu schreiben.
+Falls dies eine ausgesuchte Rücksprungadresse oder irgendeinen Pointer überschreibt, kann der Angreifer nun entweder eigens eingegebenen Code ausführen oder bereits bestehende Funktionen
+ähnlich wie beim Buffer Overflow \ac{rop} Angriff ausführen.
 
 Diese Schwachstelle kann also von einer Informationsgewinnung zur Ausführung von eigenem Code bei geschickter Anwendung von \textit{\%n} und dementsprechend vorliegenden Schwachstellen führen.
 Bei vorliegender Schwachstelle kann der Anriff also so skaliert werden, dass anstatt nur Informationen ausgelesen werden, eigener Code ausgeführt wird (Remote Code Execution),
-womit prinzipiell die Kontrolle über das Automibil erlangt werden kann. Dies kann wiederum in verschiedensten Szenarien ausgenutzt werden.
-Da die Steuergeräte (ECUs) im Auto meist untereinander verbunden sind, lässt sich nun auch ein Angriffsszenario vorstellen, bei dem über Remote Code Execution angefangen beim
-Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipuliert werden. \cite{car format string vuln.}
+womit prinzipiell die Kontrolle über das Automibil erlangt werden kann.
+Dies kann zu verschiedenen Angriffsszenarien führen. Ein Worst Case Szenario könnte sein, dass mit der Erlangung der Kontrolle über das Fahrzeug über Remote Code Execution angefangen beim
+Informationssystem Lenk- und Bremsfunktionen manipuliert werden, die zu erheblichen negativen Auswirkungen führen können. \cite{car format string vuln.}
 
 %some further data from the memory, like a password. But then it gets even worse: if the attacker uses the %n specifier,
 %printf() will not READ, but instead WRITE a value (specifically, the number of characters printed out so far) to the memory address referenced on the stack.
@@ -491,9 +491,9 @@ Informationssystem auf Lenk-/Bremsfunktionen mit erheblichen Auswirkungen manipu
 %% BIBLIOGRAPHY
 %% add citations with "\cite{source name}"
 \begin{thebibliography}{99}
-\bibitem{Hardware Hacking Handbook} Colin O'Flynn and Jasper van Woudenberg: \textit{The Hardware Hacking Handbook}, No Starch Press, 21 Dec. 2021.
+\bibitem{Hardware Hacking Handbook} Woudenberg, Jasper van and O'Flynn, Colin: \textit{The Hardware Hacking Handbook}, San Francisco, CA, USA: No Starch Press, 2022.
 \bibitem{Operating System Concepts} Silberschatz, Abraham, Peter B. Galvin, and Greg Gagne: \textit{Operating System Concepts}, Wiley, 30. Jun. 2021.
-\bibitem{Hardware Hacking Handbook Chapter 14} Colin O'Flynn and Jasper van Woudenberg: \textit{Chapter 14: Think of the Children: Countermeasures, Certifications and Goodbytes}, n.d.. Zuletzt aufgerufen am 09.07.2022. [Online]. https://github.com/HardwareHackingHandbook/notebooks/blob/main/labs/HHH\_14\_Think\_of\_the\_Children\_Countermeasures\_Certifications\_and\_Goodbytes.ipynb
+\bibitem{Hardware Hacking Handbook Chapter 14} Woudenberg, Jasper van and O'Flynn, Colin: \textit{Chapter 14: Think of the Children: Countermeasures, Certifications and Goodbytes}, n.d.. Zuletzt aufgerufen am 09.07.2022. [Online]. https://github.com/HardwareHackingHandbook/notebooks/blob/main/labs/HHH\_14\_Think\_of\_the\_Children\_Countermeasures\_Certifications\_and\_Goodbytes.ipynb
 
 
 
