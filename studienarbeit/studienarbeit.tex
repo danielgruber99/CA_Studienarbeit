@@ -50,6 +50,7 @@ acronym=totocnumbered
 
 % Zeilenabstand auf 1.5
 \usepackage[onehalfspacing]{setspace}
+\newcommand*{\quelle}[1]{\par\raggedleft\footnotesize Quelle:~#1}
 
 \begin{document}
 \maketitle
@@ -75,12 +76,12 @@ acronym=totocnumbered
 % ============================================================================== Kapitel 1: Einleitung ===========================================================================================================
 \section{Einleitung}
 \label{sec:Einleitung}
-Embedded Systems befinden sich bereits in vielen Gegenständen und Geräten unseres täglichen Lebens, auch im Auto.
+Embedded Systems befinden sich in vielen Gegenständen und Geräten unseres täglichen Lebens, auch beispielsweise im Fahrzeug.
 Die Vernetzung im Fahrzeug und damit auch die Anzahl von Mikrocontrollern nehmen im aktuellen Jahrzehnt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
-Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
+Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren vertieft im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
 sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
-Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff, Buffer Overflows und Format String Vulnerabilities.
+Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff, Buffer Overflows und Format String Vulnerabilities. \cite{car format string vuln.}
 
 In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
 Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
@@ -124,6 +125,7 @@ nachfolgender Abbildung zu sehen.
 \end{figure}
 Dabei sichert man sich den Vorteil der Harvard-Architektur, dass gleichzetiges Laden von Befehlen und Daten für bessere Performance möglich ist, jedoch
 verliert man die Eigenschaft des pyhsikalisch getrennten Adress- bzw. Speicherbereichs. Hier wird wie in der Von-Neumann Archiktur Daten und Befehle auf dem gleichen Speichermedium abgespeichert, welche durch verschiedene Adressbereiche getrennt sind. Da dies aber keine getrennten physikalischen Speicherbereiche sind, können beispielsweise Schwachstellen wie Buffer Overflows und Return Orientated Programming ausgenutzt werden, um mit eigenen Daten den Programmfluss bzw. Befehle zu modifizieren.
+\cite{ARM Modell Overview} \cite{STM32 Mikro Prozessorarchitekturen} \cite{STM32 Mikro STM32} \cite{STM32 Controller Lecture}
 
 Manche Architekturen bieten des Weiteren an, die Ausführung von Daten zu verhindern, indem eine Hardware unterstützte \ac{mmu} oder \ac{mpu} entsprechend konfiguriert wird.
 Die \ac{mmu} besitzt in der Regel mehr Funktionalitäten als die \ac{mpu}, welche sich nur auf Speicherschutz konzentriert.
@@ -139,7 +141,7 @@ und damit bestimmte Schwachstellen nicht mehr ausgenutzt werden können. \cite{M
 Das Speichermodell bzw. der Adressierungsbereich von möglichen 4GB der CPU ist in \autoref{fig: Memory map} dargestellt.
 Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in \autoref{fig: Flash und SRAM} dargestellt sind.
 Dabei ist insbesondere wichtig, dass der Stack nach unten, d.h. von höheren zu niedrigen Adressen wächst, was es ermöglicht,
-die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen.
+die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen. \cite{STM32F103Cx DataSheets}
 \begin{figure}[ht!]
   \begin{minipage}[b]{.45\linewidth}
     \includegraphics[scale=0.47]{figures/memory_model.png}
@@ -158,14 +160,15 @@ die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow o
 Auch die Funktionsweise des \ac{lr} Register in Kombination mit dem \ac{pc} Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
 Denn das \ac{lr} speichert die Rücksprungadresse der Funktion, welche nachfolgend dann in den \ac{pc} geladen wird. Der \ac{pc} gibt an, wo das Programm fortgesetzt wird.
 Erst wenn mehrere Funktionen vorhanden sind, wird die Rücksprungadresse auf dem Stack gespeichert und muss von
-diesem wieder in das \ac{lr} geladen werden, welches dann wiederum in den \ac{pc} geladen wird.
+diesem wieder in das \ac{lr} geladen werden, welches dann wiederum in den \ac{pc} geladen wird. \cite{ARM Modell Overview}
 % TODOO: SCHREIBEN WIESO QUASI 2 FUNKTIONEN BENÖTIGT WERDEN
 Deswegen werden für das Überschreiben der Rücksprungadresse zwei Funktionen benötigt, wobei eine die andere aufruft, um das Überschreiben der Rücksprungadresse der äußeren Funktion zu ermöglichen.
 
-\autoref{fig: ARM Register Set} zeigt die vorhandenen Register im STM32F103C8T6 auf, wobei neben den genannten Registern noch der Stack Pointer und die General Purpose Register zu erwähnen sind.
+\autoref{fig: ARM Register Set} zeigt die vorhandenen Register im STM32F103C8T6 auf, wobei neben den genannten Registern noch der Stack Pointer und die General Purpose Register zu erwähnen sind. \cite{STM32F103Cx DataSheets}
 \begin{figure}[ht!]
 \begin{center}
   \includegraphics[scale=0.5]{figures/arm_register_set_selfmade.png}
+  \quelle{\cite{STM32F103Cx DataSheets}}
   \caption{ARM Register Set}
   \label{fig: ARM Register Set}
 \end{center}
@@ -174,7 +177,7 @@ Deswegen werden für das Überschreiben der Rücksprungadresse zwei Funktionen b
 %%%% LITTLE ENDIAN
 Außerdem ist hier zu erwähnen, dass die STM32 Mikrocontroller-Familie standardmäßig auf Little Endian setzt, d.h. das niederwertigste Byte befindet sich an der niedrigsten Adresse. %\cite irgendein manual
 Die Abspeicherung in Little Endian spielt insbesondere für die Schwachstelle Buffer Overflow eine wichtige Rolle, da beim Auslesen des
-Speichers dies zu berücksichtigen ist. Aber auch bei der Format String Vulnerability muss beim Überschreiben der Adresse auf die Endianness geachtet werden.
+Speichers dies zu berücksichtigen ist. Aber auch bei der Format String Vulnerability muss beim Überschreiben der Adresse auf die Endianness geachtet werden. \cite{STM32F103Cx DataSheets} \cite{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}
 
 Wie viele Embedded Systems haben die Mikrocontroller der STM32 Familie kein Betriebssstem, das weitere Schutzmechanismen oder ähnliche Dienste bieten würde.
 
@@ -197,13 +200,13 @@ Dahingegen kann bei einer memcmp Timing Attacke Stelle für Stelle durchprobiert
 wird als richtig übernommen, denn dann hat die Funktion für die jeweilige Stelle einen erfolgreichen Vergleich durchgeführt.
 Dies führt dazu, dass die nächste Stelle überprüft wird, was insofern bedeutet, dass die Funktion mehr Iterationen zu durchlaufen hat und damit mehr Zeit benötigt.
 Insgesamt führt die memcmp Timing Attacke also zu einer erheblichen Verbesserung, indem beim Fall der Passwortlänge von 6
-nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Kombinationen auszutesten sind.
+nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Kombinationen auszutesten sind. \cite{Hardware Hacking Handbook}
 
 \textit{Anmerkung} \mbox{} \\
 In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige CLock Cycles für den Vergleich benötigt werden.
 Dies bedeutet, dass der Delay über ein USB Kabel deutlich größer ist (im Millesekunden Bereich) als die Dauer des Vergleichs.
 Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Logic Analyzers benötigt, um den Zeitunterschied
-für den Vergleich am Embedded System zu messen.
+für den Vergleich am Embedded System zu messen. \cite{Hardware Hacking Handbook}
 
 \subsubsection{Beispiel}
 In diesem Abschnitt wird ein repräsentatives Beispiel für oben beschriebene Schwachstelle dargestellt.
@@ -235,6 +238,7 @@ Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.28]{figures/timing_attack_duration_example_cropped.jpeg}
+    \quelle{\cite{Hardware Hacking Handbook}}
     \caption{Timing Attack}
     \label{fig: Timing Attack}
   \end{center}
@@ -244,7 +248,7 @@ Bei der letzten Stelle ist die Zeitmessung überflüssig, denn im korrekten Fall
 Der Vorteil dieser Methode ist, dass die PIN Stellen sequentiell ausgehend vom Wissen über die Position richtig erraten werden.
 Damit erreicht man, dass die maximale Anzahl an Kombinatione maximal $10+10+10+10 = 4*10 = 40 $ beträgt.
 Das bedeutet, dass die Möglichkeiten bei der memcmp Timing Attack für Bruteforce gegenüber reinem Bruteforce nur noch $\frac{40}{1000} = \frac{4}{100} = 4\% $
-aller Möglichkeiten betragen.
+aller Möglichkeiten betragen. \cite{Hardware Hacking Handbook}
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für obige Funktion gibt es eine Vielzahl von Schutzmaßnahmen, die im Wesentlichen solche Angriffe deutlich erschweren, aber nicht 100\%ig verhindern.
@@ -311,7 +315,7 @@ Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code au
 ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
 Dabei wird erst der Shell Start in Assembly gesucht. Mit der Format String Vulnerabilty wird darauffolgend mit \%x die Rücksprungadresse
 der jeweiligen \textit{print} Funktion herausfinden. Nachfolgend kann die Schwachstelle ausgenutzt werden, indem im Input die Adresse der Rücksprungadresse von printf geschrieben wird
-und daraufhin \%n ausgenutzt wird, um an diese Adresse die Addresse zum Ausführen der Shell zu schreiben.
+und daraufhin \%n ausgenutzt wird, um an diese Adresse die Addresse zum Ausführen der Shell zu schreiben. \cite{Format String Exploits}
 % Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
 % jedoch kann es sein dass dieser printf vulnerability noch in anderen aufgerufenen Funktione wie syslog oder irgnedwelchen libs enthalten ist,
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
@@ -343,7 +347,7 @@ Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe d
 derartige möglicherweise schadhafte Eingaben nicht zuzulassen.
 
 Des Weiteren gibt es Schutmaßnahmen, die in den Compilern implementiert sind, sodass die Compiler mindestens eine Warnung oder sogar einen Fehler
-bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit \textit{print} Methoden anzeigen.
+bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit \textit{print} Methoden anzeigen. \cite{OWASP Format String Vuln.}
 
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow und ROP}
@@ -417,8 +421,8 @@ In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert 
 
 Eine weitere Möglichkeit \ac{rop} Angriffe zu verhindern, ist die Verwendung der \ac{aslr}, indem die Adressbereiche des Stacks, des Heaps und mögliche verlinkte Bibliotheken eines Programms unvorhersehbar und zufällig verteilt werden.
 Da bei Angriffen es oft wichtig ist, die exakten Speicheradressen herauszufinden, ist diese Methode sehr effektiv, um die Ausnutzung von Schwachstellen durch gezieltes Springen zu einen Programm deutlich zu erschweren.
-Eine detailliertere Umsetzung basiert beispielsweise darauf, nach definierten Zeitintervallen die Adressbereiche neu zu vergeben.
-Eine weitere Möglichkeit sind die Position-independen executables (PIE) . . .
+Eine detailliertere Umsetzung basiert beispielsweise darauf, nach definierten Zeitintervallen die Adressbereiche neu zu vergeben. \cite{OWASP Buffer Overflow} \cite{OWASP Buffer Overflow Attack}
+%Eine weiterfMöglichkeit sind die Position-independen executables (PIE) . . .
 %Damit kann ein Angreifer nicht gezielt zu Programmen springen, was die Ausnutzung von Schwachstellen erheblich erschwert.
 % Fix #4.1: Position-independent executables (PIE)
 % • Ein Programm kann beim kompilieren so gebaut werden, dass es nur relative
@@ -432,12 +436,12 @@ Des Weiteren gibt es eine Compiler basierte Lösung, nämlich unter anderem Stac
 Dabei wird ein ein "Stack Canary" - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem Genera Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
 gespeichert wird. Beim Abbauen der Funktion und damit implizit des Stacks wird beim Rücksprung der Stack Canary auf dem Stack mit der Kopie verglichen, um festzustellen, ob eine Buffer Overflow aufgetreten ist.
 Eine ähnliche, sogar verbesserte Version, bietet der Stackshield unter Linux. Dieser bietet eine Speicherung der Rücksprungadresse an einem weiteren Platz, welche als letzte Operation vor Beenden der Funktion
-dann wieder zurück geschrieben wird.
+dann wieder zurück geschrieben wird. \cite{IEEE Xplore ROP} 
 % The application randomly generates the 32-bit or 64-bit canary values, so the application can detect improper modification of a canary value resulting from a buffer overflow with high probability. However, there exist attacks that can circumvent StackGuard's canaries to successfully corrupt return addresses and defeat the security of the system
 
 Eine weitere Schutzmaßnahme sind Watchdogs, die wiederum in Software- und Hardware Watchdog unterteilt werden können. Diese funktionieren wie ein Timer Interrupt, welcher den Prozessor neustarten würde,
 falls ein solcher auftritt. Bei Software Watchdogs werden vom Programm periodische Nachrichten gesendet, um den Timer zurückzusetzen, bei Hardware Watchdogs geschieht dies ähnlich, wobei dieser als physikalische Hardware
-mit dem Prozessor verbunden ist. Sollten also in einem Programm Schwachstellen ausgenutzt werden, können die Watchdogs aufgrund nicht zurückgesetzten Timer, den Prozessor neustarten und damit die Ausnutzung vorerst verhindern.
+mit dem Prozessor verbunden ist. Sollten also in einem Programm Schwachstellen ausgenutzt werden, können die Watchdogs aufgrund nicht zurückgesetzten Timer, den Prozessor neustarten und damit die Ausnutzung vorerst verhindern. \cite{STM32 Watchdogs}
 
 Zusammengefasst gibt es eine umfassende Menge von Schutzmaßnahmen, von denen hier einige dargestellt wurden. Anzumerken ist jedoch, dass diese Schutzmaßnahmen oft nur verhindern, dass schadhafter Code
 ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit kann also die Verfügbarkeit des Systems beeinträchtigt werden, was in der englischen Literatur auch als Denial of Service (DOS) bekannt ist.
@@ -511,12 +515,11 @@ Informationssystem Lenk- und Bremsfunktionen manipuliert werden, die zu erheblic
 \bibitem{OWASP Buffer Overflow Attack}  OWASP: \textit{OWASP Buffer Overflow Attack}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://owasp.org/www-community/vulnerabilities/Buffer\_Overflow
 \bibitem{OWASP Format String Vuln.}  OWASP: \textit{OWASP Format String Vuln.}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://owasp.org/www-community/attacks/Format\_string\_attack
 
-
 % DATASHEETS
 \bibitem{MPU}  STM: \textit{Managing memory protection unit in STM32 MCUs}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/resource/en/application\_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
 %https://www.st.com/resource/en/application_note/dm00272912-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf
-\bibitem{STM32F103Cx DataSheets}  STM: \textit{STM32F103Cx8 u STM32F103xB DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/content/ccc/resource/technical/document/datasheet/33/d4/6f/1d/df/0b/4c/6d/CD00161566.pdf/files/CD00161566.pdf/jcr:content/translations/en.CD00161566.pdf
-\bibitem{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}  STM: \textit{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/resource/en/programming\_manual/pm0056-stm32f10xxx20xxx21xxxl1xxxx-cortexm3-programming-manual-stmicroelectronics.pdf
+\bibitem{STM32F103Cx DataSheets}  ST: \textit{STM32F103Cx8 u STM32F103xB DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/content/ccc/resource/technical/document/datasheet/33/d4/6f/1d/df/0b/4c/6d/CD00161566.pdf/files/CD00161566.pdf/jcr:content/translations/en.CD00161566.pdf
+\bibitem{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}  ST: \textit{STM32F10xxx/20xxx/21xxx/L1xxx3Cx8 DataSheets}. n.d.. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://www.st.com/resource/en/programming\_manual/pm0056-stm32f10xxx20xxx21xxxl1xxxx-cortexm3-programming-manual-stmicroelectronics.pdf
 
 % CA QUELLEN
 % IS Foliensatz: IS-03-Schwachstellen-2.pdf(für Buffer Overflow)
@@ -524,10 +527,14 @@ Informationssystem Lenk- und Bremsfunktionen manipuliert werden, die zu erheblic
 % CA FOliensatz 02 Speicherverwaltung: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/02_Speicherverwaltung.pdf (für Format String VUln und Buffer Overflow)
 % CA Foliensatz 03 Seitenkanäle: file:///C:/Users/danie/00_Daten/06_OTHRegensburg_Semester6/04_Computerarchitektur/01_Vorlesungen/03_Seitenkana%CC%88le.pdf (für memcmp timing attack)
 \bibitem{ARM Modell Overview}  Bruce Hemingway: \textit{ARM Overview}. 2017. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://courses.cs.washington.edu/courses/cse474/17wi/pdfs/lectures/03-arm\_overview.pdf (ARM)
-\bibitem{Format String Exploits}  Code Arcana: \textit{Introduction to format string exploits}. 02. Mai 2013. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://codearcana.com/posts/2013/05/02/introduction-to-format-string-exploits.html (FORMAT String)
+\bibitem{Format String Exploits}  Code Arcana: \textit{Introduction to format string exploits}. 02. Mai 2013. Zuletzt aufgerufen am: 09.07.2022. [Online]. https://codearcana.com/posts/2013/05/02/introduction-to-format-string-exploits.html
 % https://www.semanticscholar.org/paper/Architecture-Support-for-Defending-Against-Buffer-Xu-Kalbarczyk/743a19a7d832fc15a346329a0799d8988d4e7d8c?p2df
 
+\bibitem{STM32 Mikro Prozessorarchitekturen} Mikrocontroller.net: \textit{Prozessorarchitekturen}. 25. Sep. 2018. Zuletzt aufgerufen am: 18.07.2022. [Online]. https://www.mikrocontroller.net/articles/Prozessorarchitekturen
+\bibitem{STM32 Mikro STM32} Mikrocontroller.net: \textit{STM32}. 21. Jan. 2020. Zuletzt aufgerufen am: 18.07.2022. [Online]. https://www.mikrocontroller.net/articles/STM32
 
+\bibitem{STM32 Controller Lecture} Kadah, Yassar M.: \textit{STM32 Microcontroller Lecture}. n.d.. Zuletzt aufgerufen am: 18.07.2022. [Online]. https://www.k-space.org/Class\_Info/STM32\_Lec2.pdf
+\bibitem{STM32 Watchdogs} ST: \textit{STM32 Watchdogs}. Sep. 2021. Zuletzt aufgerufen am: 18.07.2022. [Online]. https://www.st.com/content/ccc/resource/training/technical/product\_training/group0/01/24/22/29/38/70/40/57/STM32WB-WDG\_TIMERS-Independent-Watchdog-IWDG/files/STM32WB-WDG\_TIMERS-Independent-Watchdog-IWDG.pdf/jcr:content/translations/en.STM32WB-WDG\_TIMERS-Independent-Watchdog-IWDG.pdf
 \end{thebibliography}
 
 \cleardoublepage
