@@ -369,21 +369,21 @@ Im folgenden Beispiel wird ein \ac{rop} Angriff mit Berücksichtigung der Eigens
 \subsubsection{Beispiel}
 % sieh Beispiel in Übung, Skizze machen
 Ein \ac{rop} Angriff funktioniert wie in \autoref{fig: Buffer Overflow} dargestellt.
-Eine beispielhafte Funktion request\_input() lässt dem User über eine weitere Funktion, scanf(), eine Eingabe tätigen, wobei das zugrundeliegende Speicherobjekt beispielsweise ein C Array ist.
-Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. mehr Daten in das Array gespeichert werden, als dieses umfasst.
-O.B.d.A wird hier ein char Array der Größe 8 gewählt. Bei der Eingabe befindet man sich in der scanf Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
+Eine beispielhafte Funktion \textit{request\_input()} lässt dem User über eine weitere Funktion, \textit{scanf()}, eine Eingabe tätigen, wobei das zugrundeliegende Speicherobjekt beispielsweise ein C Array ist.
+Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. es wird versucht, mehr Daten in ein Array zu speichern, als dieses umfasst.
+Ohne Beschränkung der Allgemeinheit wird hier ein \textit{char}-Array der Größe $8$ gewählt. Bei der Eingabe befindet man sich in der \textit{scanf} Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
 \textit{AAAA AAAA AAAA AAAA AAAA 0ROP}  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
 Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack (d.h. von hohen zu niedrigen Adressen) nur 8 Byte reserviert.
-Nun werden zu den höheren Adressen hin (der Stack wächst ja nach unten bei der Reservierung) weitere Daten überschrieben.
-Bei der vorhandenen ARM Architektur, die sich im STM32 befindet, befindet sich wie eingangs erwähnt ein \ac{lr}, welches die Rücksprungadresse der Scanf Funktion noch hält, da keine weiter Funktion aufgerufen wird.
-Deshalb funktioniert der Rücksprung von der scanf Funktion in die request\_input() Funktion, denn hierbei wird nur das \ac{lr} in den \ac{pc} geladen.
-Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei die eine in der anderen genestet sein muss.
+Nun werden zu den höheren Adressen im Stack hin weitere Daten überschrieben.
+Bei der vorhandenen ARM Architektur, auf die die STM32 Mikrocontroller Familie basiert, befindet sich, wie eingangs erwähnt, ein \ac{lr}, welches die Rücksprungadresse der \textit{scanf} Funktion noch hält, da keine weiter Funktion aufgerufen wird.
+Deshalb funktioniert der Rücksprung von der \textit{scanf} Funktion in die \textit{request\_input()} Funktion, denn hierbei wird nur das \ac{lr} in den \ac{pc} geladen.
+Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei diese ineinander verschachtelt sein müssen.
 
-Bei der request\_input() Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
+Bei der \textit{request\_input()} Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
 Dies wird daraufhin wieder in den \ac{pc} geladen, in dem Fall \textit{POR0}. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
 letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
-Der Rücksprung der aufgerufenen Funktion wird i.d.Regel fehlschlagen und das Programm abbrechen, jedoch bleiben die mit der gewünschten aufgerufenen Funktion bestehen.
-Damit ist der ROP Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
+Der Rücksprung der aufgerufenen Funktion wird in der Regel fehlschlagen und das Programm abbrechen, jedoch bleibt das gewünschte Ergebnis mit der aufgerufenen Funktion bestehen.
+Damit ist der \ac{rop} Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
 % Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
 % Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besodners sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
 \begin{figure}[ht!]
@@ -417,7 +417,7 @@ als eine Menge von Ringen beschrieben, wobei diese hierarchisch von innen nach a
 Der innere Ring, Ring 0, bietet alle Rechte und Privilegien, während weiter außen liegende Ringe nur einen Teil der Privilegien des nächstinneren Ringes zur Verfügung stellen.
 Üblicherweise wird dieses Modell so verwendet, dass das System mit den höchsten Privilegien gestartet und initalisiert wird, während Benutzer- und Applikationsprozesse mit niedrigerem Privilegien
 laufen. Damit kann man erreichen, dass Applikationen mit Format String Schwachstelle nur noch soweit ausgenutzt werden, was die Privilegien, mit denen diese Applikation läuft, auszunutzen.
-In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert oder zumindest dessen schadhafte Auswirkungen reduziert.
+In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert oder zumindest dessen schadhafte Auswirkungen reduziert. \cite{Operating System Concepts}
 
 Eine weitere Möglichkeit \ac{rop} Angriffe zu verhindern, ist die Verwendung der \ac{aslr}, indem die Adressbereiche des Stacks, des Heaps und mögliche verlinkte Bibliotheken eines Programms unvorhersehbar und zufällig verteilt werden.
 Da bei Angriffen es oft wichtig ist, die exakten Speicheradressen herauszufinden, ist diese Methode sehr effektiv, um die Ausnutzung von Schwachstellen durch gezieltes Springen zu einen Programm deutlich zu erschweren.
