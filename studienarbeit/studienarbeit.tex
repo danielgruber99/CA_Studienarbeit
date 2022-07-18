@@ -281,8 +281,8 @@ Alle vorgestellten Maßnahmen zielen darauf ab, Seitenkanalinformationen zu verf
 \subsection{Format String Vulnerabilty}
 \subsubsection{Beschreibung}
 Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
-Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz bringen.
-Diese Schwachstelle basiert auf variadische Funktionen, d.h. Funktionen, die eine variable Anzahl an Argumenten akzeptieren.
+Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz zu bringen.
+Diese Schwachstelle basiert auf variadischen Funktionen, d.h. Funktionen, die eine variable Anzahl an Argumenten akzeptieren.
 Eine von jedem C Programmierer benutzte variadische Funktion ist beipsielsweise die \textit{printf} Funktion. \cite{OWASP Format String Vuln.}
 Das erste Argument einer printf Funktion ist der sogenannte Format String, der mit den angegebenen Paramtern beginnend mit \%, wie \%s, \%d, \%x usw., besimmt, wie nachfolgende Parameter
 als Argumente verwendet werden.
@@ -299,7 +299,7 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
 
 Falls die printf - Funktion unsicher programmiert ist, wie in \autoref{fig:formatstringreadbase} zu sehen,
 wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen werden.
-Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriff auf Register bzw. Stack,
+Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriffe auf die Register oder den Stack
 durchgeführt werden.
 \begin{figure}[ht!]
   \begin{center}
@@ -309,11 +309,11 @@ durchgeführt werden.
   \end{center}
 \end{figure}
 Durch das Auslesen von Registern, Stack und Speicher kann ein Angreifer wertvolle Informationen über das laufende Progamm gewinnen.
-Dazu können beipsielsweise Passwörter zählen, die im Arbeitsspeicher (RAM) oder in anderen Speicherbereichen vorzufinden sind.
+Dazu können beispielsweise Passwörter zählen, die im Arbeitsspeicher (RAM) oder in anderen Speicherbereichen vorzufinden sind.
 
 Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
-ein Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
-Dabei wird erst der Shell Start in Assembly gesucht. Mit der Format String Vulnerabilty wird darauffolgend mit \%x die Rücksprungadresse
+eine (Admin-) Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
+Zuerst wird dabei der Shell Start in Assembly gesucht. Mit der Format String Vulnerabilty wird darauffolgend mit \textit{\%x} die Rücksprungadresse
 der jeweiligen \textit{print} Funktion herausfinden. Nachfolgend kann die Schwachstelle ausgenutzt werden, indem im Input die Adresse der Rücksprungadresse von printf geschrieben wird
 und daraufhin \%n ausgenutzt wird, um an diese Adresse die Addresse zum Ausführen der Shell zu schreiben. \cite{Format String Exploits}
 % Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
@@ -321,9 +321,9 @@ und daraufhin \%n ausgenutzt wird, um an diese Adresse die Addresse zum Ausführ
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
 
 \subsubsection{Beispiel}
-Folgendes Beispiel konzentriert sich auf die beispielhafte Anwendung der Format String Vulnerabilty in Bezug auf das Auslesen von Speicher.
+Folgendes Beispiel konzentriert sich auf die beispielhafte Ausnutzung der Format String Vulnerabilty in Bezug auf das Auslesen von Speicher.
 %Konkret soll hier der RAM ausgelesen werden, in welchen sich das Passwort nach erstmaligen Vergleich geladen wurde.
-Der Codeausschnitt in \autoref{fig:formatstringwriteextended} zeigt ein Programm, dass eine printf Implementierung mit oben beschriebener Schwachstelle aufweist.
+Der Codeausschnitt in \autoref{fig:formatstringwriteextended} zeigt ein Programm, dass oben beschriebene Schwachstelle in der \textit{printf} Funktion aufweist.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_formatstring_extended.png}
@@ -331,23 +331,23 @@ Der Codeausschnitt in \autoref{fig:formatstringwriteextended} zeigt ein Programm
     \label{fig:formatstringwriteextended}
   \end{center}
 \end{figure}
-Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschten Benutzernamen.
+Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschtem Benutzernamen.
 Letztere Eingabe weist die entsprechende Format String Schwachstelle auf.
-Hierbei kann der Nutzer bzw. der Angreifer dies ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auslzusende Speicherzelle dient.
-In der zweiten Eingabe, der Benutzername eingabe, kann man nun mit enstprechend vielen \textit{\%d} und dann einem \textit{\%s}, welches sich genau an der Position des
-vorher gegebenen Alters eingibt. Beispielsweise kann die Eingabe dann wie folgt aussehen: \textit{\%d\%d\%s}.
+Dies kann der Nutzer bzw. der Angreifer ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auslzusende Speicherzelle dient.
+In der zweiten Eingabe, der Benutzernameeingabe, kann nun mit enstprechend vielen \textit{\%d} gefolgt von einem \textit{\%s}, welches sich genau an der Position des
+vorher gegebenen Alters, eingibt. Beispielsweise kann die Eingabe dann wie folgt aussehen: \textit{\%d\%d\%s}.
 Das eingegebene Alter bzw. die Adresse der Speicherstelle, die ausgelesen werden soll, wird mit \textit{\%s} als Pointer interpretiert und ausgegeben.
-Hiermit kann man beispielsweise nun den RAM, den Flash oder andere Speicherbereiche auslesen.
+Damit kann beispielsweise nun der RAM, der Flash oder andere Speicherbereiche ausgelesen werden.
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schutzmaßnahme, nämlich
-das sichere Programmieren, indem man die Paramter \textit{\%s}, \textit{\%d} oder weitere korrekt benutzt.
+das sichere Programmieren, indem die Paramter wie \textit{\%s}, \textit{\%d} oder weitere korrekt benutzt werden.
 Dabei wird man zusätzlich von sicheren \textit{print} Funktionen unterstützt, wie z.B. \textit{sprintf}.
 Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
 derartige möglicherweise schadhafte Eingaben nicht zuzulassen.
 
 Des Weiteren gibt es Schutmaßnahmen, die in den Compilern implementiert sind, sodass die Compiler mindestens eine Warnung oder sogar einen Fehler
-bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit \textit{print} Methoden anzeigen. \cite{OWASP Format String Vuln.}
+bei der Programmierung von unsicherem Code insbesondere in Zusammenhang mit variadischen Funktionen anzeigen. \cite{OWASP Format String Vuln.}
 
 %%%%% BUFFER OVERFLOW (ROP)
 \subsection{Buffer Overflow und ROP}
@@ -355,13 +355,13 @@ bei der Programmierung von unsicheren Code insbesondere in Zusammenhang mit \tex
 Ein Buffer Overflow tritt dann auf, wenn ein Programm mehr Daten in einen Buffer, beispielsweise ein Array in der Programmiersprache C, versucht zu speichern, als
 dieser umfasst. \cite{OWASP Buffer Overflow}
 Die Eingabe überschreitet die Grenzen des Buffers und überschreibt damit andere Daten, die außerhalb des Buffers gespeichert sind.
-Diese Schwachstelle kann in zwei verschiedenen Kontexten auftreten, nämlich in einem Stack- oder in einem Heap Buffer Overflow.
+Diese Schwachstelle kann in zwei verschiedenen Szenarien auftreten, nämlich in einem Stack- oder in einem Heap Buffer Overflow.
 In diesem Kapitel wird der Fokus auf den Stack Buffer Overflow gelegt, wobei man im Wesentlichen zwei verschiedenen Angriffsarten unterscheidet.
 Ein Angriffstyp basiert auf der Idee eigenen Code einzufügen und diesen auszuführen, indem der Rücksprungadresse der Funktion so überschrieben wird, dass die Funktion
 mit eigens eingefügten Code ausgeführt wird. Diese Art von Angriff ist relativ leicht zu verhindern, indem eine \ac{dep} verwendet wird. \cite{IEEE Xplore ROP}
-Wie in Kapitel 2 erwähnt, ist hierfür die \ac{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar markiert.
+Wie in \autoref{sec:VorstellungwichtigerRahmenbedinungen} erwähnt, ist hierfür die \ac{mpu} bei der STM Mikrocontroller Familie zuständig, der den SRAM und damit den sich dort befindenden Stack als nicht ausführbar deklariert.
 
-Die Verhinderung des zweiten Angriffstypes ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung angebracht, indem die Rücksprungadresse mit der Adresse
+Die Verhinderung des zweiten Angriffstyps ist deutlich komplexer, denn hier werden vorhandene Funktionen zur Ausführung gebracht, indem die Rücksprungadresse mit der Adresse
 dieser gewünschten Funktion überschrieben wird. %% TODO: hier noch schreiben, dass diese vorhandenen Funkt. nicht in SRAM, deswegen bringt DEP/MPU nix?
 Dieser Angriffstyp ist als \ac{rop} Angriff bekannt, namensgebend durch die RETN Assembly Instruktion.
 Im folgenden Beispiel wird ein \ac{rop} Angriff mit Berücksichtigung der Eigenschaften des STM32 dargestellt.
@@ -436,7 +436,7 @@ Des Weiteren gibt es eine Compiler basierte Lösung, nämlich unter anderem Stac
 Dabei wird ein ein "Stack Canary" - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem Genera Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
 gespeichert wird. Beim Abbauen der Funktion und damit implizit des Stacks wird beim Rücksprung der Stack Canary auf dem Stack mit der Kopie verglichen, um festzustellen, ob eine Buffer Overflow aufgetreten ist.
 Eine ähnliche, sogar verbesserte Version, bietet der Stackshield unter Linux. Dieser bietet eine Speicherung der Rücksprungadresse an einem weiteren Platz, welche als letzte Operation vor Beenden der Funktion
-dann wieder zurück geschrieben wird. \cite{IEEE Xplore ROP} 
+dann wieder zurück geschrieben wird. \cite{IEEE Xplore ROP}
 % The application randomly generates the 32-bit or 64-bit canary values, so the application can detect improper modification of a canary value resulting from a buffer overflow with high probability. However, there exist attacks that can circumvent StackGuard's canaries to successfully corrupt return addresses and defeat the security of the system
 
 Eine weitere Schutzmaßnahme sind Watchdogs, die wiederum in Software- und Hardware Watchdog unterteilt werden können. Diese funktionieren wie ein Timer Interrupt, welcher den Prozessor neustarten würde,
