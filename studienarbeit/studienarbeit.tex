@@ -383,19 +383,20 @@ Deshalb funktioniert der Rücksprung von der \textit{scanf} Funktion in die \tex
 Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt werden, wobei diese ineinander verschachtelt sein müssen.
 
 Bei der \textit{request\_input()} Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
-Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} wie in \autoref{fig: Buffer Overflow} zu sehen. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
-letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
-Der Rücksprung der aufgerufenen Funktion wird in der Regel fehlschlagen und das Programm abbrechen, jedoch bleibt das gewünschte Ergebnis mit der aufgerufenen Funktion bestehen.
-Damit ist der \ac{rop} Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
-% Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
-% Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besodners sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
+Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} wie in \autoref{fig: Buffer Overflow} zu sehen.
 \begin{figure}[ht!]
   \begin{center}
-    \includegraphics[scale=0.56]{figures/BufferOverflow_w_stack.png}
+    \includegraphics[scale=0.5]{figures/BufferOverflow_w_stack.png}
     \caption{Buffer Overflow}
     \label{fig: Buffer Overflow}
   \end{center}
 \end{figure}
+Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
+letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
+Der Rücksprung der aufgerufenen Funktion wird in der Regel fehlschlagen und das Programm abbrechen, jedoch bleibt das gewünschte Ergebnis mit der aufgerufenen Funktion bestehen.
+Damit ist der \ac{rop} Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
+% Denn nun wird die Rücksprungadresse von request_input() mit der gewünschten ADresse der Funktion überschrieben
+% Auch wichtig zu beachten ist Little Endian, was man bei den letzten 4 Byte besonders sieht, Eingabe ist 0ROP, wird aber im Stack little endian mäßgi gespeichert, d.h. POR0
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 % Data execution Prevention (Memory protection in vorstellung wichtiger rahmbedigungen einfügen)
