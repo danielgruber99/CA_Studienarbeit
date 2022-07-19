@@ -377,13 +377,11 @@ Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Bu
 Ohne Beschränkung der Allgemeinheit wird hier ein \textit{char}-Array der Größe $8$ gewählt. Bei der Eingabe befindet man sich in der \textit{scanf} Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
 \textit{AAAA AAAA AAAA AAAA AAAA 0ROP}  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
 Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack nur 8 Byte reserviert.
-Nun werden zu den höheren Adressen im Stack hin weitere Daten überschrieben.
+Nun werden im Stack zu den höheren Adressen hin weitere Daten überschrieben.
 Bei der vorhandenen ARM Architektur, auf die die STM32 Mikrocontroller Familie basiert, befindet sich, wie eingangs erwähnt, ein \ac{lr}, welches noch die Rücksprungadresse der \textit{scanf} Funktion hält, da keine weitere Funktion aufgerufen wird.
 Deshalb funktioniert der Rücksprung von der \textit{scanf} Funktion in die \textit{request\_input()} Funktion, denn hierbei wird nur das \ac{lr} in den \ac{pc} geladen.
 Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt werden, wobei diese ineinander verschachtelt sein müssen.
 
-Bei der \textit{request\_input()} Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
-Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} wie in \autoref{fig: Buffer Overflow} zu sehen.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.5]{figures/BufferOverflow_w_stack.png}
@@ -391,6 +389,8 @@ Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} 
     \label{fig: Buffer Overflow}
   \end{center}
 \end{figure}
+Bei der \textit{request\_input()} Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
+Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} wie in \autoref{fig: Buffer Overflow} zu sehen.
 Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
 letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
 Der Rücksprung der aufgerufenen Funktion wird in der Regel fehlschlagen und das Programm abbrechen, jedoch bleibt das gewünschte Ergebnis mit der aufgerufenen Funktion bestehen.
