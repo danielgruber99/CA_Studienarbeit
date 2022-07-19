@@ -25,7 +25,7 @@ acronym=totocnumbered
 
 \newcommand{\comment}[1]{}
 \date{\today}
-\title{Vulnerability eingebetteter Systeme}
+\title{Schwachstellen eingebetteter Systeme}
 \author{Gruber Daniel}
 \studentid{3214109}
 \documenttype{Studienarbeit}
@@ -63,6 +63,7 @@ acronym=totocnumbered
 \begin{acronym}[AUTOSAR]
   \acro{aslr}[ASLR]{Address Space Layout Randomization}
   \acro{dep}[DEP]{Data Execution Prevention}
+  \acro{dos}[DOS]{Denial of Service}
   \acro{ecu}[ECU]{Electronic Control Unit}
   \acro{lr}[LR]{Linking Register}
   \acro{mmu}[MMU]{Memory Management Unit}
@@ -80,11 +81,11 @@ Embedded Systems befinden sich in vielen Gegenständen und Geräten unseres täg
 Die Vernetzung im Fahrzeug und damit auch die Anzahl von Mikrocontrollern nehmen im aktuellen Jahrzehnt deutlich zu, weshalb in Deutschland unter anderem die Automobilhersteller im Bezug auf Sicherheit des Fahrzeugs im Fokus stehen.
 Autombilhersteller wie BMW, AUDI und Daimler sind erst seit einigen Jahren vertieft im Bereich der Softwareentwicklung tätig, worunter insbesondere die Entwicklung eines autonom fahrenden Fahrzeugs und die Entwicklung
 bzw. mittlerweile Erweiterung an Funktionalität des Infotainmentsystems zählen. Nicht nur, weil diese Automobilhersteller relativ neu in der Softwareentwicklung im Vergleich zu den Technologieriesen wie Google, Facebook und Co.
-sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen verlgeichsmäßig oft auf.
-Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff, Buffer Overflows und Format String Vulnerabilities. \cite{car format string vuln.} %\cite{6} %\cite{7}
+sind, sondern insbesondere wegen der wenigen Schutzmechanismen in Embedded Systems, treten hier bereits längst bekannte Schwachstellen vergleichsmäßig oft auf.
+Darunter fallen Schwachstellen wie die memcmp Timing Attacke als Beispiel für einen Seitenkanalangriff, Buffer Overflows und Format String Vulnerabilities. \cite{car format string vuln.} \cite{McKinsey}
 
 In dieser Studienarbeit werden diese drei genannten Schwachstellen detailliert beschrieben, wobei vorneweg konkret auf die STM32 Architektur eingegangen wird.
-Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahme vorgestellt.
+Zusätzlich werden zu jeder der dargestellten Schwachstellen deren mögliche Präventions- und Schutzmaßnahmen vorgestellt.
 Abschließend wird die Skalierbarkeit eines Angriffes basierend auf der Format String Vulnerabilty auf das Infotainmentsystem eines Fahrzeuges aufgegriffen und besprochen.
 
 
@@ -109,9 +110,9 @@ ARM ist ein \ac{risc}, welche den Vorteil von insbesondere einen kompakten Befeh
 % - Returning implemented by restoring the PC from LR
 % - For non-leaf functions, LR will have to be stacked
 % TODO: überdenken, ob HARVARD architektur noch genauer beschreiben
-Der Cortex M0/M3/M4 Prozessor, insbesondere der Cortex M3 Prozessor wie beim STM32F103C8T6 vorhanden, basiert grundlegend auf der Harvard Architektur.
+Der Cortex-M0/M3/M4 Prozessor, insbesondere der Cortex-M3 Prozessor wie beim STM32F103C8T6 vorhanden, basiert grundlegend auf der Harvard Architektur.
 Hierbei existieren, wie für die Harvard Architektur typisch, verschiedene Busse für Befehle und Daten, welche es ermöglichen, zugleich Befehle und Daten zu lesen bzw. Daten in den Speicher zurückzuschreiben.
-Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehls und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speichermedium, dem Flash, liegen und
+Aus Programmierersicht ist die CPU aber ein Von-Neumann Modell, da zwar die Trennung zwischen Befehl- und Datenbus existiert, jedoch sowohl Befehle und Daten im gleichen Speichermedium, dem Flash, liegen und
 somit der Adressraum dementsprechend linear programmiert werden kann.
 Grundsätzlich wird dies in der Literatur als Modifizierte Harvard Architektur bezeichnet, da es zwar verschiedene Busse für Daten und Befehle gibt, jedoch keine strikte Trennung zwischen Daten und Befehlsadressraum gegeben ist.
 Insbesondere ist kein getrennter physikalischer Speicher für Daten und Befehle vorhanden, denn beides befindet sich im Flash, worauf sowohl der Datenbus (DBUS) und Befehlsbus (IBUS) zugreift, wie auf
@@ -131,7 +132,7 @@ Manche Architekturen bieten des Weiteren an, die Ausführung von Daten zu verhin
 Die \ac{mmu} besitzt in der Regel mehr Funktionalitäten als die \ac{mpu}, welche sich nur auf Speicherschutz konzentriert.
 Da die STM32 Mikrocontroller Familie wenn dann nur eine \ac{mpu} besitzt, wie z.B. der STM32F303, wird hier nur darauf eingegangen.
 Die \ac{mpu} ermöglicht es, ein eingebettetes System robuster und sicher zu machen, indem beispielsweise der SRAM bzw. Bereiche vom SRAM als nicht-ausführbar definiert werden können
-und damit bestimmte Schwachstellen nicht mehr ausgenutzt werden können. \cite{MPU}
+und damit gewisse Schwachstellen nicht mehr ausgenutzt werden können. \cite{MPU}
 %Des Weiteren besitzen die meisten STM32, insbesondere der in der Übung verwendete STM32F103C8T6, eine \ac{mpu}.
 % TODO: MPU ausführlich erklären hier!!
 % verbieten, dass User applikation von korrupten dataen verwendet von kritischen tasks wie os kernel
@@ -141,7 +142,7 @@ und damit bestimmte Schwachstellen nicht mehr ausgenutzt werden können. \cite{M
 Das Speichermodell bzw. der Adressierungsbereich von möglichen 4GB der CPU ist in \autoref{fig: Memory map} dargestellt.
 Teil dieses Adressierungsbereichs sind der Code, der sich im Flash befindet, und der SRAM, welche beide in \autoref{fig: Flash und SRAM} dargestellt sind.
 Dabei ist insbesondere wichtig, dass der Stack nach unten, d.h. von höheren zu niedrigen Adressen wächst, was es ermöglicht,
-die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe auszunutzen. \cite{STM32F103Cx DataSheets}
+die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow oder eine Format String Vulnerabilty für Angriffe zu überschreiben. \cite{STM32F103Cx DataSheets}
 \begin{figure}[ht!]
   \begin{minipage}[b]{.45\linewidth}
     \includegraphics[scale=0.47]{figures/memory_model.png}
@@ -157,9 +158,9 @@ die Rücksprungadresse und andere Bereiche im SRAM über einen Buffer Overflow o
 \end{figure}
 
 % Stack Pointer, PC Register, LR Register
-Auch die Funktionsweise des \ac{lr} Register in Kombination mit dem \ac{pc} Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
+Auch die Funktionsweise des \ac{lr} in Kombination mit dem \ac{pc} Register ist für die konkrete Ausnutzung nachfolgender Schwachstellen bedeutend.
 Denn das \ac{lr} speichert die Rücksprungadresse der Funktion, welche nachfolgend dann in den \ac{pc} geladen wird. Der \ac{pc} gibt an, wo das Programm fortgesetzt wird.
-Erst wenn mehrere Funktionen vorhanden sind, wird die Rücksprungadresse auf dem Stack gespeichert und muss von
+Erst wenn mehrere Funktionen vorhanden sind, wird die Rücksprungadresse auf dem Stack abgelegt und muss von
 diesem wieder in das \ac{lr} geladen werden, welches dann wiederum in den \ac{pc} geladen wird. \cite{ARM Modell Overview}
 % TODOO: SCHREIBEN WIESO QUASI 2 FUNKTIONEN BENÖTIGT WERDEN
 Deswegen werden für das Überschreiben der Rücksprungadresse zwei Funktionen benötigt, wobei eine die andere aufruft, um das Überschreiben der Rücksprungadresse der äußeren Funktion zu ermöglichen.
@@ -189,7 +190,8 @@ Wie viele Embedded Systems haben die Mikrocontroller der STM32 Familie kein Betr
 \subsubsection{Beschreibung}
 Die memcmp Timing Attacke ist ein typischer Seitenkanal-Angriff. Dieser Angriffstyp basiert auf Informationen, die von der konkreten Implementierung eines Systems abhängen.
 Bei der memcmp Timing Attacke basiert dies auf dem Wissen über die benötigte Zeit eines Vergleichs von Speicherbereichen, welcher in der Software implementiert ist. \cite{Hardware Hacking Handbook}
-Vorausgesetzt eine Speichervegleichsfunktion ist so implementiert, dass beim ersten nicht übereinstimmendem verglichenen Zeichen von der Funktion 'false' zurückgegeben wird,
+
+Vorausgesetzt eine Speichervegleichsfunktion ist so implementiert, dass beim ersten nicht übereinstimmendem verglichenen Zeichen von der Funktion \textit{false} zurückgegeben wird,
 benötigt der Vergleich unterschiedlich lange, je nach Anzahl richtiger Zeichen einer Zeichenkette.
 Hier wird konkret der Aspekt der Zeit ausgenutzt, denn die Dauer der Funktion hängt von der Anzahl und Richtigkeit der zu vergleichenden Speicherbereichen bzw. Zeichenketten ab.
 Je länger die Funktion benötigt, desto mehr Buchstaben waren beim entsprechenden Vergleich richtig.
@@ -203,9 +205,9 @@ Insgesamt führt die memcmp Timing Attacke also zu einer erheblichen Verbesserun
 nur bis zu $ |A|+|A|+|A|+|A|+|A|+|A| = 6 * |A| $ Kombinationen auszutesten sind. \cite{Hardware Hacking Handbook}
 
 \textit{Anmerkung} \mbox{} \\
-In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige CLock Cycles für den Vergleich benötigt werden.
+In der Realität liegt solch ein Vergleich im Bereich von Nanosekunden, da nur wenige Clock Cycles für den Vergleich benötigt werden.
 Dies bedeutet, dass der Delay über ein USB Kabel deutlich größer ist (im Millesekunden Bereich) als die Dauer des Vergleichs.
-Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Logic Analyzers benötigt, um den Zeitunterschied
+Aus diesem Grund werden für solche memcmp Timing Attacken Oszilloskope oder Logic Analyzer benötigt, um den Zeitunterschied
 für den Vergleich am Embedded System zu messen. \cite{Hardware Hacking Handbook}
 
 \subsubsection{Beispiel}
@@ -213,28 +215,28 @@ In diesem Abschnitt wird ein repräsentatives Beispiel für oben beschriebene Sc
 Der Einfachheit halber wird ein PIN Vergleich der begrenzten Länge 4 durchgeführt, wobei das Alphabet 0-9 ist, d.h. eine Mächtigkeit von $|A| = 10$ besitzt.
 Dies gilt ohne Einschränkung der Allgemeinheit und kann beliebig in der Länge sowie der Mächtigkeit des Alphabets verändert werden.
 Zudem wird die Annahme getroffen, dass der PIN Vergleich erst nach vollständiger PIN Eingabe erfolgt. Dabei
-wird folgende Methode für die Überprüfung des PINs verwendet:
+wird folgende Methode für die Überprüfung der PIN verwendet:
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_memcmp_pin_correct_base.png}
-    \caption{memcmp Timing Attacke - Methode zur Überprüfung eines Pins}
+    \caption{memcmp Timing Attacke - Methode zur Überprüfung einer PIN}
     \label{fig:memcmpcheckpinbase}
   \end{center}
 \end{figure}
 
 Für reines Raten, d.h. Bruteforcing ohne weitere Kenntnisse, sind $ 10*10*10*10 = 10^4 $ Kombinationen auszutesten.
-Um die Anzahl der Kombinationen deutlich zu reduzieren, kann man den Vorteil des Wissens über die Implementierugn der oben dargestellten Funktion nutzen und damit das Prinzip der memcmp Timing Attacke verwenden.
-Denn die Methode für das Überpüfen des PINs gibt beim ersten nicht korrekten Zeichen 'false' zurück, weshalb die die Ausführungsdauer der
+Um die Anzahl der Kombinationen deutlich zu reduzieren, kann man den Vorteil des Wissens über die Implementierung der oben dargestellten Funktion nutzen und damit das Prinzip der memcmp Timing Attacke verwenden.
+Denn die Methode für das Überpüfen der PIN gibt beim ersten nicht korrekten Zeichen 'false' zurück, weshalb die die Ausführungsdauer der
 Funktion von der Anzahl der richtig eingegebenen PIN Stellen abhängt.
 Dafür wird Stelle für Stelle durchgegangen und überprüft, angefangen bei der ersten Stelle für jede mögliche Eingabe von 0-9, welche Eingabe die längste Zeit benötigt hat.
-Denn wenn die Stelle richtig ist, war der Vergleich richtig und die Funktion wird die nächste Stelle überprüfen, was mit einer längeren Dauer für die Funktion
+Denn wenn die Stelle richtig ist, war der Vergleich richtig und die Funktion wird die nächste Stelle überprüfen, was mit einer längeren Dauer der Funktion
 verbunden ist.
 Konkret für die erste Stelle werden also alle Möglichkeiten durchgetestet von \textit{0000, 1000, 2000 bis 9000}, wobei für jeder dieser Eingaben
 eine Zeitmessung durchgeführt wird.
 Für die erste Eingabestelle stellt \autoref{fig: Timing Attack} oben dar, wie sich die Vergleichszeit im
-korrekten Fall ($t_correct$) zum Fehlerfall ($t_bad$) unterscheidet.
-Da der korrekte Pin 1337 ist, wird für die Eingabe 1000 die Vergleichszeit länger dauern, wie in $t_correct$ dargestellt.
-Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
+korrekten Fall ($t_{correct}$) zum Fehlerfall ($t_{bad}$) unterscheidet.
+Da die korrekte PIN $1337$ ist, wird für die Eingabe $1000$ die Vergleichszeit länger dauern, wie in $t_{correct}$ dargestellt.
+Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_{bad}$ zutreffen.
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.28]{figures/timing_attack_duration_example_cropped.jpeg}
@@ -246,13 +248,13 @@ Für alle anderen Möglichkeiten wird das obere Diagramm mit $t_bad$ zutreffen.
 Diese Angriff wird für jede Möglichkeit der nächsten Stelle bis zur letzten Stelle druchgeführt ausgehend vor der korrekten Eingabe der jeweils vorherigen Stellen.
 Bei der letzten Stelle ist die Zeitmessung überflüssig, denn im korrekten Fall hat man das System entsperrt.
 Der Vorteil dieser Methode ist, dass die PIN Stellen sequentiell ausgehend vom Wissen über die Position richtig erraten werden.
-Damit erreicht man, dass die maximale Anzahl an Kombinatione maximal $10+10+10+10 = 4*10 = 40 $ beträgt.
+Damit erreicht man, dass die maximale Anzahl an Kombinationen maximal $10+10+10+10 = 4*10 = 40 $ beträgt.
 Das bedeutet, dass die Möglichkeiten bei der memcmp Timing Attack für Bruteforce gegenüber reinem Bruteforce nur noch $\frac{40}{1000} = \frac{4}{100} = 4\% $
 aller Möglichkeiten betragen. \cite{Hardware Hacking Handbook}
 
 \subsubsection{Prävention/Schutzmaßnahmen}
-Für obige Funktion gibt es eine Vielzahl von Schutzmaßnahmen, die im Wesentlichen solche Angriffe deutlich erschweren, aber nicht 100\%ig verhindern.
-Bei der Annahme, dass das Passwort in Klartext überprüft wird und nicht als gehashter Wert, werden insgesamt 4 Schutzmaßnahmen vorgestellt.
+Für die dargestelle Funktion in \autoref{fig:memcmpcheckpinbase} gibt es eine Vielzahl von Schutzmaßnahmen, die im Wesentlichen solche Angriffe deutlich erschweren, aber nicht 100\%ig verhindern.
+Bei der Annahme, dass das Passwort in Klartext überprüft wird und nicht als gehashter Wert, werden insgesamt vier Schutzmaßnahmen vorgestellt.
 
 Die erste Schutzmaßnahme zielt auf eine korrelationslose bzw. konstante Zeit bei der Überprüfung ab. Dies wird erreicht, indem unabhängig
 von einer falschen Stelle immer alle Stellen überprüft werden und erst dann das Ergebnis des Vergleichs zurückgegeben wird.
@@ -262,12 +264,13 @@ alle Stellen überprüft werden und erst am Ende das Ergebnis des Vergleichs zur
 \begin{figure}[ht!]
   \begin{center}
     \includegraphics[scale=0.8]{figures/CodeSnippets/CodeSnippet_memcmp_pin_correct_improved_1.png}
-    \caption{memcmp Timing Attacke - verbesserte Methode zur Überprüfung eines Pins}
+    \caption{memcmp Timing Attacke - verbesserte Methode zur Überprüfung einer PIN}
     \label{fig:memcmpcheckpinimproved}
   \end{center}
 \end{figure}
+
 Eine ähnliche Schutzmaßnahmen, die zwar nicht auf konstante Zeit setzt, sondern auf Randomisierung von Zeit, kann durch Hinzufügen von
-zufällig ausgeführten Operationen jeglicher Art, z.B. \textit{sleep()} Statements, implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
+zufälligen Operationen jeglicher Art, z.B. \textit{sleep()} Statements, implementiert werden. Dies erschwert die Korrelation von gemessener Zeit und korrekter bzw. fehlerhafter Eingabe.
 
 Auch basierend auf der Randomisierung könnte die Erweiterung helfen, den Start des Vergleichs zu randomisieren, d.h. bei jeder neuen Eingabe wird der Vergleich bei
 einer anderen Position startend durchgeführt.
@@ -283,11 +286,11 @@ Alle vorgestellten Maßnahmen zielen darauf ab, Seitenkanalinformationen zu verf
 Eine Format String Vulnerabilty tritt auf, wenn eine Benutzereingabe als Befehl interpretiert wird.
 Weitergeführt kann ein Angreifer dies ausnutzen, um Code auszuführen, den Stack auszulesen oder gezielt das Programm durch einen Segmentation Fault zum Absturz zu bringen.
 Diese Schwachstelle basiert auf variadischen Funktionen, d.h. Funktionen, die eine variable Anzahl an Argumenten akzeptieren.
-Eine von jedem C Programmierer benutzte variadische Funktion ist beipsielsweise die \textit{printf} Funktion. \cite{OWASP Format String Vuln.}
-Das erste Argument einer printf Funktion ist der sogenannte Format String, der mit den angegebenen Paramtern beginnend mit \%, wie \%s, \%d, \%x usw., besimmt, wie nachfolgende Parameter
+Eine von jedem C Programmierer benutzte variadische Funktion ist beispielsweise die \textit{printf} Funktion. \cite{OWASP Format String Vuln.}
+Das erste Argument einer printf Funktion ist der sogenannte Format String, der mit den angegebenen Parametern beginnend mit \%, wie \%s, \%d, \%x usw., besimmt, wie nachfolgende Parameter
 als Argumente verwendet werden.
 \autoref{fig: printf - Format String} verdeutlicht dies, wobei \textit{name} ein string und \textit{age} eine integer Variable ist, die in den entsprechenden
-Paramtern \%s und \%d als Argumente ersetzt werden.
+Parametern \%s und \%d als Argumente ersetzt werden.
 % Parameter im Format String beginnen mit %
 \begin{figure}[ht!]
   \begin{center}
@@ -299,7 +302,7 @@ Paramtern \%s und \%d als Argumente ersetzt werden.
 
 Falls die printf - Funktion unsicher programmiert ist, wie in \autoref{fig:formatstringreadbase} zu sehen,
 wird diese Funktion ohne explizite Parameter aufgerufen, weshalb die Werte von den Registern bzw. weiterführend vom Stack ausgelesen werden.
-Allgemein funktiert dies, wenn der Format String nicht der Anzahl der enstprechenden nachfolgenden Argumente entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriffe auf die Register oder den Stack
+Allgemein funktioniert dies, wenn der Format String nicht der Anzahl der nachfolgenden Argumenten entspricht, weshalb dann unsichere Speicheroperationen, wie Zugriffe auf die Register oder den Stack
 durchgeführt werden.
 \begin{figure}[ht!]
   \begin{center}
@@ -314,8 +317,8 @@ Dazu können beispielsweise Passwörter zählen, die im Arbeitsspeicher (RAM) od
 Des Weiteren ist es möglich, wie anfangs erwähnt, eigenen eingegebenen Code auszuführen. Dabei ist oft das Ziel,
 eine (Admin-) Shell zu öffnen, auf der weitere Aktionen ausgeführt werden können.
 Zuerst wird dabei der Shell Start in Assembly gesucht. Mit der Format String Vulnerabilty wird darauffolgend mit \textit{\%x} die Rücksprungadresse
-der jeweiligen \textit{print} Funktion herausfinden. Nachfolgend kann die Schwachstelle ausgenutzt werden, indem im Input die Adresse der Rücksprungadresse von printf geschrieben wird
-und daraufhin \%n ausgenutzt wird, um an diese Adresse die Addresse zum Ausführen der Shell zu schreiben. \cite{Format String Exploits}
+der jeweiligen \textit{print} Funktion durch Ausprobieren herausgefunden. Nachfolgend kann die Schwachstelle ausgenutzt werden, indem im Input die Adresse der Rücksprungadresse von printf geschrieben wird
+und daraufhin \%n ausgenutzt wird, um an diese Adresse die Adresse zum Ausführen der Shell zu schreiben. \cite{Format String Exploits}
 % Anmkerung: Für C Programmierer ist derFehler offensichtlich und wird i.d.R. durch richtiges Programmieren kommplett ausgehebelt,
 % jedoch kann es sein dass dieser printf vulnerability noch in anderen aufgerufenen Funktione wie syslog oder irgnedwelchen libs enthalten ist,
 % deswegen ist der Fehler nicht so trivial wie er auf dem ersten Blick erscheitn.
@@ -331,22 +334,22 @@ Der Codeausschnitt in \autoref{fig:formatstringwriteextended} zeigt ein Programm
     \label{fig:formatstringwriteextended}
   \end{center}
 \end{figure}
-Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschtem Benutzernamen.
+Hierbei wird der Nutzer nach zwei Eingaben gefragt, nämlich dem Alter und dem gewünschten Benutzernamen.
 Letztere Eingabe weist die entsprechende Format String Schwachstelle auf.
-Dies kann der Nutzer bzw. der Angreifer ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auslzusende Speicherzelle dient.
-In der zweiten Eingabe, der Benutzernameeingabe, kann nun mit enstprechend vielen \textit{\%d} gefolgt von einem \textit{\%s}, welches sich genau an der Position des
-vorher gegebenen Alters, eingibt. Beispielsweise kann die Eingabe dann wie folgt aussehen: \textit{\%d\%d\%s}.
+Dies kann der Nutzer bzw. der Angreifer ausnutzen, indem er als Alter eine beliebige Zahl eingibt, die als Adresse für die auszulesende Speicherzelle dient.
+In der zweiten Eingabe, der Eingabe für den Benutzernamen, kann nun mit entsprechend vielen \textit{\%d} gefolgt von einem \textit{\%s}, welches sich genau an der Position des
+vorher eingegebenen Alters, diese Schwachstelle ausgenutzt werden. Beispielsweise kann die Eingabe wie folgt aussehen: \textit{\%d\%d\%s}.
 Das eingegebene Alter bzw. die Adresse der Speicherstelle, die ausgelesen werden soll, wird mit \textit{\%s} als Pointer interpretiert und ausgegeben.
 Damit kann beispielsweise nun der RAM, der Flash oder andere Speicherbereiche ausgelesen werden.
 
 \subsubsection{Prävention/Schutzmaßnahmen}
 Für die Format String Vulnerabilty existiert eine einfache sehr effektive Schutzmaßnahme, nämlich
-das sichere Programmieren, indem die Paramter wie \textit{\%s}, \textit{\%d} oder weitere korrekt benutzt werden.
+das sichere Programmieren, indem die Parameter wie \textit{\%s}, \textit{\%d} oder weitere korrekt benutzt werden.
 Dabei wird man zusätzlich von sicheren \textit{print} Funktionen unterstützt, wie z.B. \textit{sprintf}.
 Weitere Schutzmaßnahmen in der Software könnten zudem noch sein, die Eingabe des Nutzers zu überprüfen, und
 derartige möglicherweise schadhafte Eingaben nicht zuzulassen.
 
-Des Weiteren gibt es Schutmaßnahmen, die in den Compilern implementiert sind, sodass die Compiler mindestens eine Warnung oder sogar einen Fehler
+Des Weiteren gibt es Schutzmaßnahmen, die in den Compilern implementiert sind, sodass die Compiler mindestens eine Warnung oder sogar einen Fehler
 bei der Programmierung von unsicherem Code insbesondere in Zusammenhang mit variadischen Funktionen anzeigen. \cite{OWASP Format String Vuln.}
 
 %%%%% BUFFER OVERFLOW (ROP)
@@ -373,14 +376,14 @@ Eine beispielhafte Funktion \textit{request\_input()} lässt dem User über eine
 Damit der Angriff möglich ist, muss die Eingabe so gewählt werden, dass ein Buffer Overflow auftritt, d.h. es wird versucht, mehr Daten in ein Array zu speichern, als dieses umfasst.
 Ohne Beschränkung der Allgemeinheit wird hier ein \textit{char}-Array der Größe $8$ gewählt. Bei der Eingabe befindet man sich in der \textit{scanf} Funktion, die nun beispielsweise eine Eingabe der Länge 24 entgegennimmt:
 \textit{AAAA AAAA AAAA AAAA AAAA 0ROP}  (Leerzeichen nicht als Eingabe, nur zur Lesbarkeit)
-Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack (d.h. von hohen zu niedrigen Adressen) nur 8 Byte reserviert.
+Für die mögliche Eingabe wurden auf dem nach unten wachsenden Stack nur 8 Byte reserviert.
 Nun werden zu den höheren Adressen im Stack hin weitere Daten überschrieben.
-Bei der vorhandenen ARM Architektur, auf die die STM32 Mikrocontroller Familie basiert, befindet sich, wie eingangs erwähnt, ein \ac{lr}, welches die Rücksprungadresse der \textit{scanf} Funktion noch hält, da keine weiter Funktion aufgerufen wird.
+Bei der vorhandenen ARM Architektur, auf die die STM32 Mikrocontroller Familie basiert, befindet sich, wie eingangs erwähnt, ein \ac{lr}, welches noch die Rücksprungadresse der \textit{scanf} Funktion hält, da keine weitere Funktion aufgerufen wird.
 Deshalb funktioniert der Rücksprung von der \textit{scanf} Funktion in die \textit{request\_input()} Funktion, denn hierbei wird nur das \ac{lr} in den \ac{pc} geladen.
-Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt, werden, wobei diese ineinander verschachtelt sein müssen.
+Dies ist auch der Grund, wieso zwei Funktionen dafür benötigt werden, wobei diese ineinander verschachtelt sein müssen.
 
 Bei der \textit{request\_input()} Funktion ist auf dem Stack die Rücksprungadresse überschrieben worden, wobei das Überschriebene dann in das \ac{lr} geladen wird.
-Dies wird daraufhin wieder in den \ac{pc} geladen, in dem Fall \textit{POR0}. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
+Dies wird daraufhin wieder in den \ac{pc} geladen, in diesem Fall \textit{POR0} wie in \autoref{fig: Buffer Overflow} zu sehen. Hier ist noch zu bemerken, dass das als Little Endian interpretiert wird, und somit
 letztendlich zu der Funktion an der Adresse \textit{0x0ROP} gesprungen wird.
 Der Rücksprung der aufgerufenen Funktion wird in der Regel fehlschlagen und das Programm abbrechen, jedoch bleibt das gewünschte Ergebnis mit der aufgerufenen Funktion bestehen.
 Damit ist der \ac{rop} Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP Buffer Overflow Attack}
@@ -404,22 +407,22 @@ Damit ist der \ac{rop} Angriff erfolgreich. \cite{IEEE Xplore ROP} \cite{OWASP B
 % 3. Address Space Layout Randomization (ASLR)
 % 4. Stack Canaries
 % 5. Watchdogs
-Neben der offensichtlichen und schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
+Neben der offensichtlichen und vermeintlich schwierigsten Schutzmaßnahme, keine Fehler in der Softwareentwicklung zu machen, gibt es eine Vielzahl von Schutzmaßnahmen.
 Eine davon, die \ac{dep} umgesetzt durch die \ac{mpu}, bereits in \autoref{sec:VorstellungwichtigerRahmenbedinungen} ausführlich erklärt, deklariert Speicherbereiche im SRAM bzw. Stack als nicht ausführbar
-und verhindert damit den ersten Angriffstyp. Jedoch wird der zweite ANgriffstyp \ac{rop} nicht verhindert, da dieser auf bereits existierende Funktionen zugreift, die nicht im Stack liegen.
+und verhindert damit den ersten Angriffstyp. Jedoch wird der zweite Angriffstyp \ac{rop} nicht verhindert, da dieser auf bereits existierende Funktionen zugreift, die nicht im Stack liegen.
 
-Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von Protection Rings, \ac{aslr}, Stack Canaries oder Watchdogs.
+Für diesen Angriffstyp gibt es andere Schutzmaßnahmen wie die Nutzung von \textit{Protection Rings}, \textit{\ac{aslr}}, \textit{Stack Canaries} oder \textit{Watchdogs}.
 
-Das Protection Rings Modell, welches von der Hardware unterstützt werden muss, dient der Trennung von Privilegien, mit denen verschiedene Prozesse laufen.
+Das \textit{Protection Ring} Modell, welches von der Hardware unterstützt werden muss, dient der Trennung von Privilegien, mit denen verschiedene Prozesse laufen.
 Die grundlegende Idee hinter diesem Modell ist, dass Prozesse nach dem Need-to-Know Prinzip nur mit den benötigten Rechten ausgeführt werden.
 Dabei werden in diesem Modell die Ausführungsrechte bzw. -privilegien
 als eine Menge von Ringen beschrieben, wobei diese hierarchisch von innen nach außen nummeriert werden.
 Der innere Ring, Ring 0, bietet alle Rechte und Privilegien, während weiter außen liegende Ringe nur einen Teil der Privilegien des nächstinneren Ringes zur Verfügung stellen.
-Üblicherweise wird dieses Modell so verwendet, dass das System mit den höchsten Privilegien gestartet und initalisiert wird, während Benutzer- und Applikationsprozesse mit niedrigerem Privilegien
-laufen. Damit kann man erreichen, dass Applikationen mit Format String Schwachstelle nur noch soweit ausgenutzt werden, was die Privilegien, mit denen diese Applikation läuft, auszunutzen.
+Üblicherweise wird dieses Modell so verwendet, dass das System mit den höchsten Privilegien gestartet und initalisiert wird, während Benutzer- und Applikationsprozesse mit niedrigeren Privilegien
+laufen. Damit wird erreicht, dass Applikationen mit einer Format String Schwachstelle nur noch soweit ausgenutzt werden, was die Privilegien, mit denen diese Applikation läuft, erlauben.
 In der Regel wird dies soweit eingeschränkt, dass man einen Angriff verhindert oder zumindest dessen schadhafte Auswirkungen reduziert. \cite{Operating System Concepts}
 
-Eine weitere Möglichkeit \ac{rop} Angriffe zu verhindern, ist die Verwendung der \ac{aslr}, indem die Adressbereiche des Stacks, des Heaps und mögliche verlinkte Bibliotheken eines Programms unvorhersehbar und zufällig verteilt werden.
+Eine weitere Möglichkeit, \ac{rop} Angriffe zu verhindern, ist die Verwendung der \textit{\ac{aslr}}, indem die Adressbereiche des Stacks, des Heaps und mögliche verlinkte Bibliotheken eines Programms unvorhersehbar und zufällig verteilt werden.
 Da bei Angriffen es oft wichtig ist, die exakten Speicheradressen herauszufinden, ist diese Methode sehr effektiv, um die Ausnutzung von Schwachstellen durch gezieltes Springen zu einen Programm deutlich zu erschweren.
 Eine detailliertere Umsetzung basiert beispielsweise darauf, nach definierten Zeitintervallen die Adressbereiche neu zu vergeben. \cite{OWASP Buffer Overflow} \cite{OWASP Buffer Overflow Attack}
 %Eine weiterfMöglichkeit sind die Position-independen executables (PIE) . . .
@@ -432,19 +435,19 @@ Eine detailliertere Umsetzung basiert beispielsweise darauf, nach definierten Ze
 % • In PIEs können statischer Code, Bibliotheken und Variablen zusätzlich durch
 % zufällige Adressen geschützt werden um mehr Schutz gegen ROP zu bieten.
 
-Des Weiteren gibt es eine Compiler basierte Lösung, nämlich unter anderem StackGuard, bei der ein Sicherheitsmechanismus im Compiler eingebaut ist, der korrupte bzw. modifizierte Rücksprungadressen überprüft und damit zumindest den Sprung dorthin verhindert.
-Dabei wird ein ein "Stack Canary" - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem Genera Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
-gespeichert wird. Beim Abbauen der Funktion und damit implizit des Stacks wird beim Rücksprung der Stack Canary auf dem Stack mit der Kopie verglichen, um festzustellen, ob eine Buffer Overflow aufgetreten ist.
-Eine ähnliche, sogar verbesserte Version, bietet der Stackshield unter Linux. Dieser bietet eine Speicherung der Rücksprungadresse an einem weiteren Platz, welche als letzte Operation vor Beenden der Funktion
-dann wieder zurück geschrieben wird. \cite{IEEE Xplore ROP}
+Des Weiteren gibt es eine Compiler basierte Lösung, nämlich unter anderem \textit{StackGuard}, bei der ein Sicherheitsmechanismus im Compiler eingebaut ist, der korrupte bzw. modifizierte Rücksprungadressen überprüft und damit zumindest den Sprung dorthin verhindert.
+Dabei wird ein \textit{Stack Canary} - ein zufälliger bekannter Wert - im Stack neben der Rücksprungadresse geschrieben, während eine Kopie davon in einem General Purpose Register r0-r12 (siehe \autoref{fig: ARM Register Set})
+gespeichert wird. Beim Abbau der Funktion und damit implizit des Stacks wird beim Rücksprung der \textit{Stack Canary} auf dem Stack mit der Kopie verglichen, um zu überprüfen, ob diese bei einem möglichen Angriff manipuliert worden ist.
+Eine ähnliche, sogar verbesserte Version, bietet der \textit{Stackshield} unter Linux. Dieser bietet eine Speicherung der Rücksprungadresse an einem weiteren Platz, welche als letzte Operation vor Beenden der Funktion
+dann wieder zurückgeschrieben wird. \cite{IEEE Xplore ROP} \cite{IEE buffer overflow stackguard}
 % The application randomly generates the 32-bit or 64-bit canary values, so the application can detect improper modification of a canary value resulting from a buffer overflow with high probability. However, there exist attacks that can circumvent StackGuard's canaries to successfully corrupt return addresses and defeat the security of the system
 
-Eine weitere Schutzmaßnahme sind Watchdogs, die wiederum in Software- und Hardware Watchdog unterteilt werden können. Diese funktionieren wie ein Timer Interrupt, welcher den Prozessor neustarten würde,
-falls ein solcher auftritt. Bei Software Watchdogs werden vom Programm periodische Nachrichten gesendet, um den Timer zurückzusetzen, bei Hardware Watchdogs geschieht dies ähnlich, wobei dieser als physikalische Hardware
+Eine weitere Schutzmaßnahme sind \textit{Watchdogs}, die wiederum in Software- und Hardware Watchdog unterteilt werden können. Diese funktionieren wie ein Timer Interrupt, welcher den Prozessor neustarten würde,
+falls ein solcher auftritt. Bei Software Watchdogs werden vom Programm periodisch Nachrichten gesendet, um den Timer zurückzusetzen, bei Hardware Watchdogs geschieht dies ähnlich, wobei dieser als physikalische Hardware
 mit dem Prozessor verbunden ist. Sollten also in einem Programm Schwachstellen ausgenutzt werden, können die Watchdogs aufgrund nicht zurückgesetzten Timer, den Prozessor neustarten und damit die Ausnutzung vorerst verhindern. \cite{STM32 Watchdogs}
 
 Zusammengefasst gibt es eine umfassende Menge von Schutzmaßnahmen, von denen hier einige dargestellt wurden. Anzumerken ist jedoch, dass diese Schutzmaßnahmen oft nur verhindern, dass schadhafter Code
-ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit kann also die Verfügbarkeit des Systems beeinträchtigt werden, was in der englischen Literatur auch als Denial of Service (DOS) bekannt ist.
+ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit kann also die Verfügbarkeit des Systems beeinträchtigt werden, was auch als \ac{dos} bekannt ist.
 %%% MMU VS MPU überarbeiten, STM32f103 hat keine MPU oder MMU, STM32F303 z.B. schon
 
 
@@ -453,15 +456,15 @@ ausgeführt wird, aber nicht, dass das System zum Absturz gebracht wird. Damit k
 \section{Besprechung der möglichen Skalierbarkeit}
 % https://cydrill.com/cyber-security/automotive-security-how-to-brick-your-car/
 Die oben genannten Schwachstellen können auch in Infotainmentsystemen von Automobilen ausgenutzt werden mit dem Ziel, die Kontrolle über dieses zu erlangen.
-Im Folgenden wird inbesondere die Ausnutzung der Format String Vulnerabilty im Infotainmentssystems eines Automobils betrachtet und des Weiteren auf mögliche Skalierungen eingegangen.
+Im Folgenden wird insbesondere die Ausnutzung der Format String Vulnerabilty im Infotainmentsystem eines Automobils betrachtet und des Weiteren auf mögliche Skalierungen eingegangen.
 
 Mittlerweile entwickelt jeder größere Automobilhersteller sein eigenes Infotainmentsystem bzw. in Kooperation mit Softwareriesen wie Google, Apple, etc..
-Die Funktionalität der Infotainmentsysteme steigt zunehmend an, von Nutzung eines Navigationssystem über die Verbindung mit Mobilgeräten und Nutzung von weiteren Apps.
+Die Funktionalität der Infotainmentsysteme steigt zunehmend an, von Nutzung eines Navigationssystem über die Verbindung mit Mobilgeräten und Nutzung von weiteren Applikationen.
 Insbesondere Schnittstellen nach außen, wie die Bluetooth Kommunikation des Automobils mit einem Smartphone birgt einige Risiken.
 Darunter zählt auch die Format String Vulnerability Schwachstelle. Diese konnte nämlich bei der Verbindung eines Mobilgerätes mit dem Infotainmentsystem über Bluetooth
 ausgenutzt werden, indem der Name des mit sich zu verbindenden Smartphones beispielsweise auf \textit{\%c\%c\%c\%c\%c\%c\%c\%c} geändert wird.
-Wie in der Format String Vulnerability erklärt, führt diese Eingabe bei unsicher programmierten \textit{printf} Statements dazu, dass Register bzw. der Stack ausgelesen werden.
-Dies war in früheren Versionen des Infotainmentsystems möglich, und Daten, die von Experten als Karten- und Navigationinformationen identifiziert worden sind, konnten ausgelesen werden.
+Wie in der Format String Vulnerability erklärt, führt diese Eingabe bei unsicher programmierten \textit{printf} Implementierungen dazu, dass Register bzw. der Stack ausgelesen werden.
+Dies war in früheren Versionen des Infotainmentsystems möglich, und Daten, die von Experten als Karten- und Navigationsinformationen identifiziert worden sind, konnten ausgelesen werden.
 
 Allein das Auslesen von wichtigen Informationen des Automobils ist eine erhebliche Sicherheitslücke, jedoch kann dies weiter skaliert werden mit der Nutzung von \textit{\%s} oder \textit{\%n}.
 Mit \textit{\%n} kann insbesondere \textit{nprintf()} in folgender Art und Weise ausgenutzt werden, dass ein Wert an die Speicheradresse geschrieben wird, die am Stack referenziert wird.
